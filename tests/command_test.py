@@ -13,7 +13,7 @@ class TestWHOOnePlayer(ServerTestBase):
         'who_doing': 'yes',
     }
     def test(self):
-        result = self._do_full_session(CONNECT + 
+        result = self._do_full_session(CONNECT +
 b"""@set me=_/do:Doing message.
 !WHO
 QUIT
@@ -47,7 +47,7 @@ class TestWHOOnePlayerNoDoing(ServerTestBase):
         'who_doing': 'no',
     }
     def test(self):
-        result = self._do_full_session(CONNECT + 
+        result = self._do_full_session(CONNECT +
 b"""!WHO
 QUIT
 """)
@@ -80,12 +80,12 @@ class TestWHOOnePlayerNoDoingNoWiz(ServerTestBase):
         'who_doing': 'no',
     }
     def test(self):
-        result_setup = self._do_full_session(CONNECT + 
+        result_setup = self._do_full_session(CONNECT +
 b"""
 @pcreate TestUser=foo
 QUIT
 """)
-        result = self._do_full_session( 
+        result = self._do_full_session(
 b"""
 connect TestUser foo
 @set me=_/do:This should not show.
@@ -193,7 +193,7 @@ QUIT
         self.assertTrue(b'- flt /_testfloat:42' in result)
         self.assertTrue(b'- str /_testdir/:normalvalue' in result)
         self.assertTrue(b'B str /_blessprop:{null:}' in result)
-    
+
     def test_examine_propdir(self):
         result = self._do_full_session(CONNECT + self.SETUP_THING +
 b"""
@@ -432,8 +432,253 @@ QUIT
 """)
         self.assertTrue(b'That is not a reasonable name' in result)
 
+class TestTeleport(ServerTestBase):
+    def test_tohome_player(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@dig Beta
+@link TestUser=#3
+@tel TestUser=home
+ex *TestUser
+QUIT
+""")
+        self.assertTrue(b'Location: Beta' in result)
 
- 
+    def test_tohome_thing(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create TestThing
+@dig Beta
+@link TestThing=#3
+@tel TestThing=home
+ex #2
+QUIT
+""")
+        self.assertTrue(b'Location: Beta' in result)
+
+
+    def test_parent_loop_thing(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+@create IdThree
+@create IdFour
+@tel #4=#3
+@tel #3=#2
+@tel #2=#4
+QUIT
+""")
+        self.assertTrue(b'contain itself' in result)
+
+    def test_parent_loop_player(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@create IdThree
+@set IdThree=V
+@create IdFour
+@set IdFour=V
+@tel IdThree=TestUser
+@tel #4=#3
+@tel TestUser=#4
+QUIT
+""")
+        self.assertTrue(b'contain themselves' in result)
+
+    def test_dropto(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+@dig IdThree
+@dig IdFour
+@link #3=#4
+@tel IdTwo=#3
+ex #2
+QUIT
+""")
+        self.assertTrue(b'Location: IdFour' in result)
+
+class TestStats(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@stats
+QUIT
+""")
+        self.assertTrue(b'1 room' in result)
+        self.assertTrue(b'0 exit' in result)
+        self.assertTrue(b'1 player' in result)
+
+class TestBoot(ServerTestBase):
+    def test_one_conn(self):
+        result_setup = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@set *TestUser=W
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+@boot TestUser
+""")
+        self.assertTrue(b'You have been booted' in result)
+
+class TestToadNoRecycle(ServerTestBase):
+    extra_params = { 'toad_recycle': 'no' }
+    def test_toad_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@toad TestUser
+ex #2
+QUIT
+""")
+        self.assertTrue(b'toad named TestUser' in result)
+
+    def test_toad_owning(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@pcreate NewUser=bar
+@create IdFour
+@chown IdFour=TestUser
+@tel IdFour=TestUser
+@toad TestUser=NewUser
+ex #4
+QUIT
+""")
+        self.assertTrue(b'Owner: NewUser' in result)
+
+class TestOpen(ServerTestBase):
+    def test_one_link(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig Beta
+@open foo;bar=#2=property
+ex me=_reg/property
+ex bar
+QUIT
+""")
+        self.assertTrue(b'Destination: Beta' in result)
+        self.assertTrue(b'- ref /_reg/property:foo;bar(#3E' in result)
+
+    def test_two(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@create IdThree
+@open foo;bar=#2;#3=property
+ex bar
+QUIT
+""")
+        self.assertTrue(b'Destination: IdTwo' in result)
+        self.assertTrue(b'Destination: IdThree' in result)
+
+
+class TestEdit(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@program foo.muf
+i
+this was the first line
+this was the second line
+this was the third line
+this was the fourth line
+.
+2 3 d
+2 i
+this was inserted before the second line
+.
+q
+@edit foo.muf
+n
+1 10 l
+q
+QUIT
+""")
+        self.assertTrue(b'1: this was the first line' in result)
+        self.assertTrue(b'2: this was inserted before the second line' in result)
+        self.assertTrue(b'3: this was the fourth line' in result)
+        self.assertTrue(b'3 lines displayed' in result)
+
+class TestAttach(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@act foo=me
+@attach foo=#0
+ex foo
+QUIT
+""")
+        self.assertTrue(b'Source: Room Zero' in result)
+
+class TestWall(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@wall Hello world.
+QUIT
+""")
+        self.assertTrue(b'One shouts, "Hello world."' in result)
+
+class TestGripe(ServerTestBase):
+    extra_params = {'file_log_gripes': 'logs/gripes'}
+    def test(self):
+        import os.path
+        result = self._do_full_session(CONNECT +
+b"""
+gripe this is a gripe.
+QUIT
+""")
+        self.assertTrue(b'Your complaint has been' in result)
+        with open(os.path.join(self.server.game_dir, 'logs', 'gripes'), 'r') as fh:
+            log_text= fh.read()
+        self.assertTrue('this is a gripe' in log_text)
+
+class TestRelink(ServerTestBase):
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@dig IdThree
+@open foo=#2
+@relink foo=#3
+ex foo
+QUIT
+""")
+        self.assertTrue(b'Destination: IdThree' in result)
+
+    def test_multilink(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@dig IdThree
+@create IdFour
+@open foo=#2
+@relink foo=#3;#4
+ex foo
+QUIT
+""")
+        self.assertTrue(b'Destination: IdThree' in result)
+        self.assertTrue(b'Destination: IdFour' in result)
+
+    def test_multilink_no(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@dig IdThree
+@program IdFour.muf
+q
+@open foo=#2
+@relink foo=#3;#4
+ex foo
+QUIT
+""")
+        self.assertTrue(b'Only one' in result)
+        self.assertTrue(b'Destination IdFour.muf(#4FM3) ignored' in result)
+        self.assertTrue(b'Destination: IdTwo' in result)
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
