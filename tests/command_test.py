@@ -1021,6 +1021,78 @@ QUIT
         self.assertTrue(b'1 propert' in result)
         self.assertTrue(b'~specialprop' in result)
 
+class TestUnbless(ServerTestBase):
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create Foo
+@set Foo=_test:foo
+@bless Foo=_test
+ex Foo=_test
+@unbless Foo=_test
+ex foo=_test
+QUIT
+""")
+        self.assertTrue(b'B str' in result)
+        self.assertTrue(b'- str' in result)
+
+class TestForce(ServerTestBase):
+    extra_params = {
+        'cpennies': 'CPENNIES',
+        'pennies': 'PENNIES',
+        'start_pennies': '169',
+        'penny_rate': '0',
+        'pcreate_flags': 'BH',
+        'zombies': 'yes'
+    }
+
+    def test_as_wizard_force_player(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@pcreate Foo=pass
+@force Foo=@create Bar
+ex #3
+QUIT
+""")
+        self.assertTrue(b'Owner: Foo' in result)
+
+    def test_as_player_force_zombie(self):
+        result_setup = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+@create Foo
+@set Foo=z
+@flock Foo=me
+@set Foo=X
+drop Foo
+@force Foo=@set me=_test:bar
+ex Foo=_test
+QUIT
+""")
+        self.assertTrue(b'- str /_test:bar' in result)
+
+    def test_as_player_force_zombie_bad_flock(self):
+        result_setup = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+@create Foo
+@set Foo=z
+@flock Foo=me&!me
+@set Foo=X
+drop Foo
+@force Foo=@set me=_test:bar
+QUIT
+""")
+        self.assertTrue(b'not force-locked' in result)
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
