@@ -224,6 +224,24 @@ QUIT
         self.assertTrue(b'Pecho: Foo pecho>>>' in result)
         self.assertTrue(b'Oecho: Foo oecho>>>' in result)
 
+    def test_noprivs(self):
+        result_setup = self._do_full_session(CONNECT + self.SETUP_THING +
+b"""
+@pcreate TestUser=foo
+@desc Foo=Test {null:with MPI}description.
+drop Foo
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+ex Foo
+l Foo
+QUIT
+""")
+        self.assertTrue(b'Owner: One' in result)
+        self.assertTrue(b'Test description.' in result)
+
+
 class TestThingContents(ServerTestBase):
     def test_empty_contents(self):
         result = self._do_full_session(CONNECT +
@@ -295,6 +313,7 @@ QUIT
 class TestCreateExaminePlayer(ServerTestBase):
     extra_params = {
         'cpennies': 'CPENNIES',
+        'pennies': 'PENNIES',
         'start_pennies': '169',
         'penny_rate': '0',
         'pcreate_flags': 'BH',
@@ -379,9 +398,12 @@ b"""
 @set Foo=@secretprop:42
 @propset Foo=dbref:~protectedprop:#0
 @propset Foo=lock:_lockprop:me
+@set Foo=_proplist/a:foo
+@set Foo=_proplist/b:bar
 @clone Foo
 ex #3
 ex #3=/
+ex #3=_proplist/
 QUIT
 """)
         self.assertTrue(b'Type: THING' in result)
@@ -390,6 +412,8 @@ QUIT
         self.assertTrue(b'str /@secretprop:42' in result)
         self.assertTrue(b'ref /~protectedprop:Room Zero' in result)
         self.assertTrue(b'lok /_lockprop:One' in result)
+        self.assertTrue(b'str /_proplist/a:foo' in result)
+        self.assertTrue(b'str /_proplist/b:bar' in result)
 
 
 class TestEntrances(ServerTestBase):
@@ -499,6 +523,16 @@ QUIT
 """)
         self.assertTrue(b'Location: IdFour' in result)
 
+    def test_nomatch(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+@tel IdTwo=badname
+QUIT
+""")
+        self.assertTrue(b'Send it where?' in result)
+
+
 class TestStats(ServerTestBase):
     def test(self):
         result = self._do_full_session(CONNECT +
@@ -509,6 +543,74 @@ QUIT
         self.assertTrue(b'1 room' in result)
         self.assertTrue(b'0 exit' in result)
         self.assertTrue(b'1 player' in result)
+
+class TestVersion(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@version
+QUIT
+""")
+        self.assertTrue(b'Version: ' in result)
+
+class TestInventory(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create Foobar
+inventory
+QUIT
+""")
+        self.assertTrue(b'You are carrying:\r\nFoobar' in result)
+
+class TestFind(ServerTestBase):
+    def test_simple_positive(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+@dig IdThree
+@tel #2=#3
+@find IdTw
+QUIT
+""")
+        self.assertTrue(b'IdTwo(#2)\r\n***End' in result)
+
+class TestOwned(ServerTestBase):
+    def test_simple(self):
+        result_setup = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@create TestObject
+@chown TestObject=TestUser
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+@owned
+QUIT
+""")
+        self.assertTrue(b'TestObject' in result)
+
+class TestScore(ServerTestBase):
+    extra_params = {
+        'cpennies': 'CPENNIES',
+        'pennies': 'PENNIES',
+        'start_pennies': '169',
+        'penny_rate': '0',
+    }
+    def test(self):
+        result_setup = self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+score
+QUIT
+""")
+        self.assertTrue(b'You have 169 PENNIES.' in result)
+
 
 class TestBoot(ServerTestBase):
     def test_one_conn(self):
@@ -679,6 +781,150 @@ QUIT
         self.assertTrue(b'Only one' in result)
         self.assertTrue(b'Destination IdFour.muf(#4FM3) ignored' in result)
         self.assertTrue(b'Destination: IdTwo' in result)
+
+    def test_loop(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@dig IdThree
+@open IdFour=IdTwo
+@open IdFive=IdFour
+@open IdSix=IdFive
+@relink IdFour=IdSix
+ex IdFour
+QUIT
+""")
+        self.assertTrue(b'would create a loop' in result)
+        self.assertTrue(b'Destination: IdTwo' in result)
+
+class TestUnlink(ServerTestBase):
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@dig IdThree
+@open foo=#2
+@unlink foo
+ex foo
+QUIT
+""")
+        self.assertTrue(b'Destination: ' not in result)
+
+class TestPropset(ServerTestBase):
+    def test_erase(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@set me=_test:foo
+@propset me=erase:_test
+ex me=_test
+QUIT
+""")
+        self.assertTrue(b'0 properties' in result)
+
+    def test_erase_propdir(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@set me=_test:foo
+@set me=_test/bar:baz
+@propset me=erase:_test
+ex me=_test
+QUIT
+""")
+        self.assertTrue(b'0 properties' in result)
+
+    def test_erase_prophead(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@set me=_test:foo
+@set me=_test/bar:baz
+@propset me=int:_test:0
+ex me=_test/
+ex me=_test
+QUIT
+""")
+        self.assertTrue(b'- str /_test/bar:baz' in result)
+        self.assertTrue(b'1 property' in result)
+        self.assertTrue(b'- dir /_test/:(no value)' in result)
+
+
+class TestSweep(ServerTestBase):
+    def test_negative(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@sweep
+QUIT
+""")
+        self.assertTrue(b'One(#1PWM3) is a player.' in result)
+
+    def test_listener_room_muf(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@program test.muf
+i
+: main "x" ;
+.
+c
+q
+@propset here=dbref:_listen/testlisten:test.muf
+@sweep
+QUIT
+""")
+        self.assertTrue(b'Room Zero(#0R) is a listening room.' in result)
+
+    def test_listener_thing_muf(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create Foo
+drop Foo
+@program test.muf
+i
+: main me @ swap notify ;
+.
+c
+q
+@set Foo=_listen/test:3
+@sweep
+QUIT
+""")
+        self.assertTrue(b'Foo(#2) is a listener object owned by One(#1PWM3).' in result)
+
+    @unittest.skip("known bug")
+    def test_say_trap_nomuf(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create Foo
+drop Foo
+@act say=Foo
+@link say=Foo
+@set say=H
+@lock say=me&!me
+@fail say=triggered
+say test
+@sweep
+QUIT
+""")
+        self.assertTrue(b'says are trapped' in result)
+
+        
+    def test_say_trap_muf(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create Foo
+drop Foo
+@act say=Foo
+@set say=H
+@lock say=me&!me
+@program test.muf
+.
+q
+@link say=test.muf
+@fail say=triggered
+say test
+@sweep
+QUIT
+""")
+        self.assertTrue(b'says are trapped' in result)
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
