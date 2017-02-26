@@ -31,3 +31,25 @@ QUIT
         # Either in @ps output or directly
         self.assertTrue(b'One This is a message.' in result)
         
+    def test_listen_room_muf_dbrefprop(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@program test.muf
+i
+: main me @ notify ;
+.
+c
+q
+@propset here=dbref:_listen/act:test.muf
+@act test=here
+@link test=here
+@lock test=me&!me
+@ofail test=This is a message.
+@fail test=Your message.
+test
+@ps
+QUIT
+""")
+        # Either in @ps output or directly
+        self.assertTrue(b'One This is a message.' in result)
+        
