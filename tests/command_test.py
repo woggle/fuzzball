@@ -982,7 +982,44 @@ QUIT
 """)
         self.assertTrue(b'is garbage.' in result)
 
+class TestSet(ServerTestBase):
+    extra_params = {
+        'cpennies': 'CPENNIES',
+        'pennies': 'PENNIES',
+        'start_pennies': '169',
+        'penny_rate': '0',
+        'pcreate_flags': 'BH',
+    }
+    def test_clear(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create Foo
+@set Foo=_/foo/bar/baz:test
+@set Foo=:clear
+ex Foo=/
+QUIT
+""")
+        self.assertTrue(b'0 propert' in result)
 
+    def test_clear_priv(self):
+        result_setup= self._do_full_session(CONNECT +
+b"""
+@pcreate TestUser=foo
+@create Foo
+@set Foo=~specialprop:foobar
+@set Foo=_not/~special:bazquux
+@chown Foo=TestUser
+drop Foo
+QUIT
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+@set Foo=:clear
+ex Foo=/
+QUIT
+""")
+        self.assertTrue(b'1 propert' in result)
+        self.assertTrue(b'~specialprop' in result)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
