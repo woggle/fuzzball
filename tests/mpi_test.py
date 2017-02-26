@@ -11,17 +11,36 @@ CONNECT = b"connect One potrzebie\n"
 class TestBlankAction(ServerTestBase):
     def test(self):
         result = self._do_full_session(CONNECT +
-b"""!@action foo=me
+b"""!@action foo;foobar=me
 @link foo=me
 @lock foo=me&!me
-@fail foo=Triggered failure message arg="{&arg}"
+@fail foo=Triggered failure message cmd="{&cmd}" arg="{&arg}"
 @succ foo=Triggered success message.
 @set foo=H
 foo Arguments here
+foobar More arguments here
 QUIT
 """)
-        logging.error("result = %s", result)
-        self.assertTrue(b'Triggered failure message arg="Arguments here"' in result)
+        self.assertTrue(b'Triggered failure message cmd="foo" arg="Arguments here"' in result)
+        self.assertTrue(b'Triggered failure message cmd="foobar" arg="More arguments here"' in result)
+
+class TestBlankActionSpecialName(ServerTestBase):
+    def test(self):
+        result = self._do_full_session(CONNECT +
+b"""!@action foo;say;pose;delimiter=me
+@link foo=me
+@lock foo=me&!me
+@fail foo=Triggered failure message cmd="{&cmd}" arg="{&arg}"
+@succ foo=Triggered success message.
+@set foo=H
+"As say.
+:As pose.
+;As delimiter.
+QUIT
+""")
+        self.assertTrue(b'Triggered failure message cmd="say" arg="As say."' in result)
+        self.assertTrue(b'Triggered failure message cmd="pose" arg="As pose."' in result)
+        self.assertTrue(b'Triggered failure message cmd="delimiter" arg="As delimiter."' in result)
 
 class TestMPIOverflow(ServerTestBase):
     def test(self):
@@ -54,7 +73,6 @@ b"""connect TestPlayer test
 foo 
 QUIT
 """)
-        logging.error("result2 = %s", result2);
         self.assertTrue(b"You can't force recursively" in result2)
 
 class TestMPILockOverflow(ServerTestBase):
