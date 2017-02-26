@@ -159,6 +159,7 @@ show_program_usage(char *prog)
     fprintf(stderr, "        -nodetach        do not detach server process\n");
     fprintf(stderr, "        -resolver PATH   path to fb-resolver program\n");
     fprintf(stderr, "        -version         display this server's version.\n");
+    fprintf(stderr, "        -compileoptions  display this server's compilation options.\n");
     fprintf(stderr, "        -help            display this message.\n");
 #ifdef WIN32
     fprintf(stderr,
@@ -4158,6 +4159,9 @@ main(int argc, char **argv)
 	    } else if (!strcmp(argv[i], "-version")) {
 		printf("%s\n", VERSION);
 		exit(0);
+            } else if (!strcmp(argv[i], "-compileoptions")) {
+                printf("%s\n", compile_options);
+                exit(0);
 	    } else if (!strcmp(argv[i], "-dbin")) {
 		if (i + 1 >= argc) {
 		    show_program_usage(*argv);
