@@ -925,6 +925,38 @@ QUIT
 """)
         self.assertTrue(b'says are trapped' in result)
 
+class TestHome(ServerTestBase):
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@dig IdTwo
+@link me=#2
+home
+ex me
+QUIT
+""")
+        self.assertTrue(b'Location: IdTwo(' in result)
+
+class TestVehicleTelLeave(ServerTestBase):
+    extra_params = {'vehicles': 'yes'}
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+@set IdTwo=V
+drop IdTwo
+@idesc IdTwo=TestInsideDesc
+@tel me=#2
+ex me
+leave
+ex me
+QUIT
+""")
+        self.assertTrue(b'You exit the' in result)
+        self.assertTrue(b'TestInsideDesc' in result)
+        self.assertTrue(b'Location: IdTwo' in result)
+        self.assertTrue(b'Location: Room Zero' in result)
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
