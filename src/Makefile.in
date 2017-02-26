@@ -215,7 +215,7 @@ Makefile: Makefile.in
 #
 
 clean:
-	-${RM} ${OBJ} core version.o mkversion.o ${SOBJ} ${MALLOBJ} resolver.o ${TARGETS} ${OLDTARGETS} prochelp.o
+	-${RM} ${OBJ} core version.o mkversion.o ${SOBJ} ${MALLOBJ} resolver.o ${TARGETS} ${OLDTARGETS} prochelp.o *.gcda *.gcno
 
 cleaner: clean
 	-${RM} Makefile config.status config.cache config.log ${INCLUDE}/autoconf.h ${TARGETS} version.c mkversion ${INCLUDE}/defines.h

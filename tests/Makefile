@@ -7,3 +7,11 @@ endif
 
 test:
 	$(PYTHON) -m unittest discover -b -v -p '*_test.py'
+
+coverage:
+	lcov -c -i -d ../src -o coverage-base
+	lcov -c -d ../src -o coverage-run
+	lcov -d ../src -a coverage-base -a coverage-run -o coverage-total
+	genhtml --no-branch-coverage -o coverage-report coverage-total
+
+.PHONY: test coverage
