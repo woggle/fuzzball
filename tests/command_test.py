@@ -957,6 +957,33 @@ QUIT
         self.assertTrue(b'Location: IdTwo' in result)
         self.assertTrue(b'Location: Room Zero' in result)
 
+class TestDropGet(ServerTestBase):
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+drop IdTwo
+ex IdTwo
+get IdTwo
+ex IdTwo
+QUIT
+""")
+        self.assertTrue(b'Location: Room Zero' in result)
+        self.assertTrue(b'Location: One' in result)
+
+class TestRecycle(ServerTestBase):
+    def test_simple(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@create IdTwo
+@recycle IdTwo
+ex #2
+QUIT
+""")
+        self.assertTrue(b'is garbage.' in result)
+
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
