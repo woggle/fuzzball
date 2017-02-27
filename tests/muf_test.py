@@ -628,7 +628,7 @@ class TestManipObject(MufProgramTestBase):
 : main
     #0 "FooBar" newobject
     dup "_testint" 42 setprop
-    dup "_testint2" "" 42 setprop
+    dup "_testint2" "" 42 addprop
     dup "_teststr" "foobar" setprop
     dup "_teststr2" "foobar" 0 addprop
     dup "_testref" #0 setprop
