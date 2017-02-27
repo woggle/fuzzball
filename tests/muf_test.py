@@ -83,6 +83,81 @@ class TestArrayFlat(MufProgramTestBase):
   over array_count 6 = and
   over array_last swap 5 = and and
   over array_first swap 0 = and and
+  over 3 array_next 1 = swap 4 = and and
+  over 3 array_prev 1 = swap 2 = and and
+  if
+    me @ "Test passed." notify
+  else
+    me @ "Test failed." notify
+  then
+;
+""")
+
+    def test_getrange(self):
+        self._test_program(b"""
+: main
+  { 1 "two" 3.0 4 5 6 }list
+  1 3 array_getrange
+  { "two" 3.0 4 }list array_compare 0 =
+  if
+    me @ "Test passed." notify
+  else
+    me @ "Test failed." notify
+  then
+;
+""")
+
+    def test_insertrange(self):
+        self._test_program(b"""
+: main
+  { 1 "two" 3.0 4 5 6 }list
+  2 { "foo" "bar" }list array_insertrange
+  { 1 "two" "foo" "bar" 3.0 4 5 6 }list array_compare 0 =
+  if
+    me @ "Test passed." notify
+  else
+    me @ "Test failed." notify
+  then
+;
+""")
+    
+    def test_setrange(self):
+        self._test_program(b"""
+: main
+  { 1 "two" 3.0 4 5 6 }list
+  2 { "foo" "bar" }list array_setrange
+  { 1 "two" "foo" "bar" 5 6 }list array_compare 0 =
+  if
+    me @ "Test passed." notify
+  else
+    me @ "Test failed." notify
+  then
+;
+""")
+
+    def test_delrange(self):
+        self._test_program(b"""
+: main
+  { 1 "two" 3.0 4 5 6 }list
+  2 3  array_delrange
+  { 1 "two" 5 6 }list array_compare 0 =
+  if
+    me @ "Test passed." notify
+  else
+    me @ "Test failed." notify
+  then
+;
+""")
+
+    def test_cut(self):
+        self._test_program(b"""
+: main
+  { 1 "two" 3.0 4 5 6 }list
+  3  array_cut
+  swap
+  { 1 "two" 3.0 }list array_compare 0 =
+  swap
+  { 4 5 6 }list array_compare 0 = and
   if
     me @ "Test passed." notify
   else
@@ -252,7 +327,7 @@ b"""
 i
 : main
     { "This is the first line." "This is the second line." }list
-    array_notify
+    { me @ }list array_notify
 ;
 .
 c
