@@ -628,7 +628,9 @@ class TestManipObject(MufProgramTestBase):
 : main
     #0 "FooBar" newobject
     dup "_testint" 42 setprop
+    dup "_testint2" "" 42 setprop
     dup "_teststr" "foobar" setprop
+    dup "_teststr2" "foobar" 0 addprop
     dup "_testref" #0 setprop
     dup "_testlok" "me&!me" parselock setprop
     dup "_testflt" 42.0 setprop
@@ -653,7 +655,9 @@ class TestManipObject(MufProgramTestBase):
 ;
 """, after=b"\nex FooBar=/\n") 
         self.assertTrue(b'- int /_testint:42' in result)
+        self.assertTrue(b'- int /_testint2:42' in result)
         self.assertTrue(b'- str /_teststr:foobar' in result)
+        self.assertTrue(b'- str /_teststr2:foobar' in result)
         self.assertTrue(b'- ref /_testref:Room Zero' in result)
         self.assertTrue(b'- lok /_testlok:' in result)
         self.assertTrue(b'- int /_testdir/:2' in result)

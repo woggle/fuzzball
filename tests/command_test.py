@@ -810,6 +810,29 @@ QUIT
 """)
         self.assertTrue(b'Destination: ' not in result)
 
+class TestGenderProp(ServerTestBase):
+    extra_params = {'gender_prop': '_funnygender'}
+
+    def test_set(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@propset me=str:sex:test
+ex me=/
+QUIT
+""")
+        self.assertTrue(b'- str /_funnygender:test' in result)
+    
+    def test_clear(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@propset me=str:_funnygender:test
+@propset me=erase:sex
+ex me=/
+QUIT
+""")
+        self.assertTrue(b'- dir /_/:' in result)
+        self.assertTrue(b'1 propert' in result)
+
 class TestPropset(ServerTestBase):
     def test_erase(self):
         result = self._do_full_session(CONNECT +
