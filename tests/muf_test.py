@@ -9,7 +9,7 @@ from fbmuck.server import Server, ServerTestBase
 CONNECT = b"connect One potrzebie\n"
 
 class MufProgramTestBase(ServerTestBase):
-    def _test_program(self,program):
+    def _test_program(self, program, before=b"", after=b""):
         result = self._do_full_session(CONNECT +
 b"""
 @program test.muf
@@ -20,11 +20,13 @@ c
 q
 @set test.muf=D
 @act runtest=me
-@link runtest=test.muf
+@link runtest=test.muf""" + before + b"""
 runtest
+""" + after + b"""
 QUIT
 """)
         self.assertTrue(b'\nTest passed.' in result)
+        return result
 
 
 class TestListener(ServerTestBase):
@@ -605,7 +607,57 @@ QUIT
 ;
 """)
 
+class TestManipObject(MufProgramTestBase):
+    def test_create(self):
+        result = self._test_program(b"""
+: main
+    #0 "FooBar" newobject
+    dup #4 = ( #2 is test.muf; #3 is action to run)
+    over thing? and
+    over location #0 = and
+    over owner #1 = and
+    over #1 swap controls and
+    over pennies 1 = and
+    if me @ "Test passed." notify then
+;
+""", after=b"\nex FooBar\n")
+        self.assertTrue(b'Type: THING' in result)
 
+    def test_props(self):
+        result = self._test_program(b"""
+: main
+    #0 "FooBar" newobject
+    dup "_testint" 42 setprop
+    dup "_teststr" "foobar" setprop
+    dup "_testref" #0 setprop
+    dup "_testlok" "me&!me" parselock setprop
+    dup "_testflt" 42.0 setprop
+    dup "_testdir/foo" 42 setprop
+    dup "_testdir" 2 setprop
+    dup "_testdir2/foo" 3 setprop
+    1 
+    over "_testint" getprop 42 = and
+    over "_testint" getpropval 42 =  and
+    over "_teststr" getprop "foobar" strcmp not and
+    over "_teststr" getpropstr "foobar" strcmp not and
+    over "_testref" getprop dup dbref? swap #0 = and and
+    over "_testlok" getprop me @ swap testlock not and
+    over "_testlok" getprop prettylock "One(#1PWM3)&!One(#1PWM3)" strcmp not and
+    over "_testflt" getprop 42.0 = and
+    over "_noprop" getpropstr "" strcmp not and
+    over "_testdir/foo" getprop 42 = and
+    over "_testdir" getprop 2 = and
+    over "_testdir2/foo" getprop 3 = and
+    over "_testdir" propdir? and
+    if me @ "Test passed." notify then
+;
+""", after=b"\nex FooBar=/\n") 
+        self.assertTrue(b'- int /_testint:42' in result)
+        self.assertTrue(b'- str /_teststr:foobar' in result)
+        self.assertTrue(b'- ref /_testref:Room Zero' in result)
+        self.assertTrue(b'- lok /_testlok:' in result)
+        self.assertTrue(b'- int /_testdir/:2' in result)
+        self.assertTrue(b'- dir /_testdir2/:(no value)' in result)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
