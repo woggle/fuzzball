@@ -244,6 +244,53 @@ class TestArrayFlat(MufProgramTestBase):
     then
 ;
 """)
+    
+    def test_array_notify(self):
+        result = self._do_full_session(CONNECT +
+b"""
+@program test.muf
+i
+: main
+    { "This is the first line." "This is the second line." }list
+    array_notify
+;
+.
+c
+q
+@set test.muf=D
+@act runtest=me
+@link runtest=test.muf
+runtest
+QUIT
+""")
+        self.assertTrue(b'\nThis is the first line.' in result)
+        self.assertTrue(b'\nThis is the second line.' in result)
+
+    def test_array_join(self):
+        self._test_program(b"""
+: main
+    { 1 #2 3.0 "test" }list ":" array_join
+    "1:#2:3.0:test" strcmp not if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_interpret(self):
+        self._test_program(b"""
+: main
+    { 1 #0 3.0 "test" }list array_interpret
+    "1Room Zero3.0test" strcmp not if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
