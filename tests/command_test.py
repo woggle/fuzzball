@@ -900,7 +900,6 @@ q
 """)
         self.assertTrue(b'Foo(#2) is a listener object owned by One(#1PWM3).' in result)
 
-    @unittest.skip("known bug")
     def test_say_trap_nomuf(self):
         result = self._do_full_session(CONNECT +
 b"""
