@@ -19,7 +19,6 @@ b"""!@action foo;foobar=me
 @set foo=H
 foo Arguments here
 foobar More arguments here
-QUIT
 """)
         self.assertTrue(b'Triggered failure message cmd="foo" arg="Arguments here"' in result)
         self.assertTrue(b'Triggered failure message cmd="foobar" arg="More arguments here"' in result)
@@ -36,7 +35,7 @@ b"""!@action foo;say;pose;delimiter=me
 "As say.
 :As pose.
 ;As delimiter.
-QUIT
+@name foo=foo
 """)
         self.assertTrue(b'Triggered failure message cmd="say" arg="As say."' in result)
         self.assertTrue(b'Triggered failure message cmd="pose" arg="As pose."' in result)
@@ -51,7 +50,6 @@ b"""!@action foo=me
 @fail foo={exec:_/fl}
 @set foo=H
 foo 
-QUIT
 """)
         self.assertTrue(b' Recursion limit exceeded.' in result)
 
@@ -66,12 +64,10 @@ b"""
 @fail foo={force:*TestPlayer,foo}
 @bless foo=_/fl
 @set foo=H
-QUIT
 """)
         result2 = self._do_full_session(
 b"""connect TestPlayer test
 foo 
-QUIT
 """)
         self.assertTrue(b"You can't force recursively" in result2)
 
@@ -86,7 +82,6 @@ b"""
 @succ foo=Foo success.
 @fail foo=Foo failure.
 foo
-QUIT
 """)
         logging.error("result1 = %s", result1);
         self.assertTrue(b'Foo failure.' in result1)

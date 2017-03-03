@@ -17,7 +17,7 @@ class TestConnectGodSay(ServerTestBase):
         result = self._do_full_session(CONNECT + 
 b"""!say This is a test.
 QUIT
-""")
+""", autoquit=False)
         result = result.replace(b"\r\n", b"\n")
         logging.debug('output from server is %s (use_ipv6=%s; use_ssl=%s)', result, self.use_ipv6, self.use_ssl)
         self.assertTrue(

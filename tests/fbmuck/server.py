@@ -19,6 +19,8 @@ RESOLVER_PATH = 'src/fb-resolver'
 TEST_PORT = 35434
 TEST_SSL_PORT = 35435
 
+CONNECT_GOD = b"connect One potrzebie\n"
+
 cached_server_options = None
 @asyncio.coroutine
 def get_server_options():
@@ -120,9 +122,13 @@ class Server(object):
                 break
             sys.stdout.write(data.decode())
 
+    def set_output_to_input(self):
+        os.rename(os.path.join(self.game_dir, 'dbout'), os.path.join(self.game_dir, 'dbin'))
+        self.input_database = os.path.join(self.game_dir, 'dbin')
+
     @asyncio.coroutine
     def start(self):
-        logging.error('start(%s)', self.game_dir)
+        logging.info('start(%s)', self.game_dir)
         yield from self._generate_parmfile()
         command_line = [
            os.path.join(SOURCE_ROOT_DIR, SERVER_PATH),
@@ -155,12 +161,16 @@ class Server(object):
         yield from asyncio.sleep(1) # wait for server to bind, etc.
 
     def _stop(self, timeout):
-        logging.error('about to SIGTERM to %d', self.process.pid)
-        self.process.send_signal(signal.SIGTERM)
-        logging.error('about to start wait')
+        logging.info('about to SIGTERM to %d', self.process.pid)
+        try:
+            self.process.send_signal(signal.SIGTERM)
+        except ProcessLookupError:
+            logging.info('already dead?')
+            pass
+        logging.info('about to start wait')
         wait_future = self.process_wait
         done, pending = yield from asyncio.wait([wait_future], timeout=timeout)
-        logging.error('tried waiting')
+        logging.info('tried waiting')
         if len(done) == 0:
             logging.error('normal shutdown failed')
             self.process.send_signal(signal.SIGKILL)
@@ -192,7 +202,7 @@ class Server(object):
         return asyncio.open_connection(host=hostname, port=port, ssl=ssl_context)
 
     def dump_log(self):
-        logging.error('here')
+        logging.info('dumping log')
         try:
             with open(os.path.join(self.game_dir, 'logs/status'), 'r') as fh:
                 status_log = fh.read()
@@ -233,6 +243,23 @@ class ReaderWrapper():
         result = yield from self.real_reader.readline()
         self.log_func(result)
         return result
+
+def send_and_quit_wait(reader, writer, main_input):
+    writer.write(main_input)
+    writer.write(b"\r\npose ENDOFTESTMARKERENDOFTESTMARKER\r\n")
+    yield from writer.drain()
+    result = b''
+    while True:
+        line = yield from reader.readline()
+        result += line
+        if b'ENDOFTESTMARKERENDOFTESTMARKER' in line:
+            break
+        if len(line) == 0:
+            break
+    writer.write(b'QUIT\r\n')
+    yield from writer.drain()
+    result += yield from reader.read()
+    return result
 
 class ServerTestBase(unittest.TestCase):
     use_ssl = None
@@ -287,10 +314,37 @@ class ServerTestBase(unittest.TestCase):
     def _do_full_session_timed_output(self, input_func, timeout=10):
         return self._do_full_session_interactive(lambda reader, writer: self._co_session_with_input(input_func, reader, writer), timeout)
 
-    def _do_full_session(self, input, timeout=10, add_crlf=True):
+    """
+    Run the commands in `input`, then return the result.
+    If `autoquit` is True, pose a distinctive pattern, look for it in the output, then QUIT.
+    Otherwise, just wait for the server to disconnect.
+    """
+    def _do_full_session(self, input, timeout=10, add_crlf=True, autoquit=True):
         if add_crlf:
             input = input.replace(b"\n", b"\r\n")
-        return self._do_full_session_timed_output(lambda writer: writer.write(input), timeout=timeout)
+        if autoquit:
+            return self._do_full_session_interactive(lambda r, w: send_and_quit_wait(r, w, input), timeout=timeout)
+        else:
+            return self._do_full_session_timed_output(lambda writer: writer.write(input), timeout=timeout)
+    
+    """
+    Run the commands in `input_setup`; then (unless use_dump is False) shutdown the server and restart it,
+    then run the commands in `input_test`. Returns the combined output of both sessions. `prefix` is
+    prepending to teach set of commands; this is intended to allow flipping `use_dump` to have two versions
+    of tests for things being saved in the database.
+    """
+    def _do_dump_test(self, input_setup, input_test, prefix=CONNECT_GOD, add_crlf=True, autoquit=True, timeout=5, use_dump=True):
+        if use_dump:
+            result_one = self._do_full_session(prefix + input_setup + b'\n@shutdown\n', timeout=timeout, autoquit=False,
+                add_crlf=add_crlf)
+            asyncio.get_event_loop().run_until_complete(self.server.stop())
+            self.server.set_output_to_input()
+            asyncio.get_event_loop().run_until_complete(self.server.start())
+            result_two = self._do_full_session(prefix + input_test, timeout=timeout, autoquit=autoquit)
+            return result_one + result_two
+        else:
+            return self._do_full_session(prefix + input_setup + b'\n' + input_test, 
+                autoquit=autoquit, add_crlf=add_crlf, timeout=timeout)
 
     def tearDown(self):
         try:

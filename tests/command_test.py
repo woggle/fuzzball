@@ -4,9 +4,9 @@ import logging
 import re
 import unittest
 
-from fbmuck.server import Server, ServerTestBase
+from fbmuck.server import Server, ServerTestBase, CONNECT_GOD
 
-CONNECT = b"connect One potrzebie\n"
+CONNECT = CONNECT_GOD
 
 class TestWHOOnePlayer(ServerTestBase):
     extra_params = {
@@ -16,7 +16,6 @@ class TestWHOOnePlayer(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""@set me=_/do:Doing message.
 !WHO
-QUIT
 """)
         result = result.replace(b"\r\n", b"\n")
         logging.debug('output from server is %s (use_ipv6=%s; use_ssl=%s)', result, self.use_ipv6, self.use_ssl)
@@ -38,9 +37,6 @@ QUIT
         self.assertTrue(
             re.search(rb'\nOne.*0s\s*.*Doing message.', result)
         )
-        self.assertTrue(
-            b'Come back later!' in result
-        )
 
 class TestWHOOnePlayerNoDoing(ServerTestBase):
     extra_params = {
@@ -49,7 +45,6 @@ class TestWHOOnePlayerNoDoing(ServerTestBase):
     def test(self):
         result = self._do_full_session(CONNECT +
 b"""!WHO
-QUIT
 """)
         result = result.replace(b"\r\n", b"\n")
         logging.debug('output from server is %s (use_ipv6=%s; use_ssl=%s)', result, self.use_ipv6, self.use_ssl)
@@ -71,9 +66,6 @@ QUIT
         self.assertTrue(
             re.search(rb'\nOne.*\s*\[\s*0\s*\]\s*.*\s*(?:127\.|local|::1|0000:)', result)
         )
-        self.assertTrue(
-            b'Come back later!' in result
-        )
 
 class TestWHOOnePlayerNoDoingNoWiz(ServerTestBase):
     extra_params = {
@@ -83,14 +75,12 @@ class TestWHOOnePlayerNoDoingNoWiz(ServerTestBase):
         result_setup = self._do_full_session(CONNECT +
 b"""
 @pcreate TestUser=foo
-QUIT
 """)
         result = self._do_full_session(
 b"""
 connect TestUser foo
 @set me=_/do:This should not show.
 WHO
-QUIT
 """)
         result = result.replace(b"\r\n", b"\n")
         logging.debug('output from server is %s (use_ipv6=%s; use_ssl=%s)', result, self.use_ipv6, self.use_ssl)
@@ -116,9 +106,6 @@ QUIT
         self.assertFalse(
             re.search(rb'\nTestUser.*This should not', result)
         )
-        self.assertTrue(
-            b'Come back later!' in result
-        )
 
 class TestSayPose(ServerTestBase):
     extra_params = {'huh_mesg': '### HUH ###'}
@@ -126,7 +113,6 @@ class TestSayPose(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
  asdfasdfasdf
-QUIT
 """)
         self.assertTrue(b'### HUH ###' in result)
 
@@ -143,7 +129,6 @@ pose Hello 3.
   "Hello 6.
     pose Hello 7.
     :Hello 8.
-QUIT
 """)
         self.assertTrue(b'You say, "Hello 1."' in result)
         self.assertTrue(b'You say, "Hello 2."' in result)
@@ -184,7 +169,6 @@ class TestExamineThing(ServerTestBase):
         result = self._do_full_session(CONNECT + self.SETUP_THING +
 b"""
 examine Foo=/
-QUIT
 """)
         self.assertTrue(b'- dir /_/' in result)
         self.assertTrue(b'- int /~testint:43' in result)
@@ -198,7 +182,6 @@ QUIT
         result = self._do_full_session(CONNECT + self.SETUP_THING +
 b"""
 examine Foo=/_testdir/
-QUIT
 """)
         self.assertTrue(b'- str /_testdir/innervalue:xyz' in result)
         self.assertTrue(b'- str /_testdir/outervalue:xyz' in result)
@@ -208,7 +191,6 @@ QUIT
         result = self._do_full_session(CONNECT + self.SETUP_THING +
 b"""
 examine Foo
-QUIT
 """)
         self.assertTrue(b'Foo(#2)  Owner: One  Value: 1' in result)
         self.assertTrue(b'Type: THING' in result)
@@ -230,13 +212,11 @@ b"""
 @pcreate TestUser=foo
 @desc Foo=Test {null:with MPI}description.
 drop Foo
-QUIT
 """)
         result = self._do_full_session(b"""
 connect TestUser foo
 ex Foo
 l Foo
-QUIT
 """)
         self.assertTrue(b'Owner: One' in result)
         self.assertTrue(b'Test description.' in result)
@@ -248,7 +228,6 @@ class TestThingContents(ServerTestBase):
 b"""
 @create Foo
 @contents Foo
-QUIT
 """)
         self.assertTrue(b'0 objects found' in result)
 
@@ -260,7 +239,6 @@ b"""
 @conlock Foo=me|!me
 put Bar=Foo
 @contents Foo
-QUIT
 """)
         self.assertTrue(b'\n1 ' in result)
         self.assertTrue(b'Bar(#3)\r\n***End of List' in result)
@@ -279,7 +257,6 @@ b"""
 foo
 foo
 examine foo
-QUIT
 """)
         self.assertTrue(b'foo(#3E)  Owner: One' in result)
         self.assertTrue(b'Type: EXIT/ACTION' in result)
@@ -301,7 +278,6 @@ b"""
 @desc #3={null:Test description with MPI.}
 @linklock #3=_linklock:1
 examine #3
-QUIT
 """)
         self.assertTrue(b'Parent: Alpha(#2' in result)
         self.assertTrue(b'\r\n{null:Test description with MPI.}' in result)
@@ -318,8 +294,8 @@ class TestCreateExaminePlayer(ServerTestBase):
         'penny_rate': '0',
         'pcreate_flags': 'BH',
     }
-    def test(self):
-        result = self._do_full_session(CONNECT +
+    def _test(self, use_dump):
+        result = self._do_dump_test(
 b"""
 @dig Alpha=#0
 @tune player_start=#2
@@ -331,9 +307,10 @@ b"""
 @dig Beta=#0
 @act testAct=#3
 @tel *TestPlayer=#5
+""",
+"""
 examine *TestPlayer
-QUIT
-""")
+""", use_dump=use_dump)
         self.assertTrue(b'TestPlayer(#3PBH' in result)
         self.assertTrue(b'CPENNIES: 169' in result)
         self.assertTrue(b'\r\n{null:Test description with MPI.}' in result)
@@ -342,13 +319,18 @@ QUIT
         self.assertTrue(b'Location: Beta(#5R' in result)
         self.assertTrue(b'Carrying:\r\nFoo(#4)' in result)
         self.assertTrue(b'Actions/exits:\r\ntestAct(#6E' in result)
+    
+    def test_nodump(self):
+        self._test(use_dump=False)
+
+    def test_dump(self):
+        self._test(use_dump=True)
 
 class TestSinglePlayerWhisper(ServerTestBase):
     def test(self):
         result = self._do_full_session(CONNECT +
 b"""
 whisper One=This is a test.
-QUIT
 """)
         self.assertTrue(b'You whisper, "This is a test." to One' in result)
         self.assertTrue(b'One whispers, "This is a test."' in result)
@@ -359,7 +341,6 @@ class TestSinglePlayerPage(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
 page One=This is a test.
-QUIT
 """)
         self.assertTrue(b'One pages from Room Zero: "This is a test."' in result)
 
@@ -370,7 +351,6 @@ class TestSinglePlayerPageHaven(ServerTestBase):
 b"""
 @set me=H
 page One=This is a test.
-QUIT
 """)
         self.assertTrue(b'does not wish to be')
 
@@ -379,7 +359,6 @@ class TestHashes(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
 @hashes all
-QUIT
 """)
         self.assertTrue(
             re.search(rb'File\s+Hash', result)
@@ -390,8 +369,8 @@ QUIT
 
 class TestClone(ServerTestBase):
     extra_params = {'verbose_clone': 0}
-    def test(self):
-        result = self._do_full_session(CONNECT +
+    def _test(self, use_dump):
+        result = self._do_dump_test(
 b"""
 @create Foo
 @desc Foo={null:to preserve}
@@ -401,11 +380,12 @@ b"""
 @set Foo=_proplist/a:foo
 @set Foo=_proplist/b:bar
 @clone Foo
+""",
+b"""
 ex #3
 ex #3=/
 ex #3=_proplist/
-QUIT
-""")
+""", use_dump=use_dump)
         self.assertTrue(b'Type: THING' in result)
         self.assertTrue(b'Foo(#3' in result)
         self.assertTrue(b'{null:to preserve}' in result)
@@ -415,10 +395,16 @@ QUIT
         self.assertTrue(b'str /_proplist/a:foo' in result)
         self.assertTrue(b'str /_proplist/b:bar' in result)
 
+    def test_dump(self):
+        self._test(use_dump=True)
+    
+    def test_nodump(self):
+        self._test(use_dump=False)
+
 
 class TestEntrances(ServerTestBase):
-    def test(self):
-        result = self._do_full_session(CONNECT +
+    def _test(self, use_dump):
+        result = self._do_dump_test(
 b"""
 @dig Alpha
 @act foo=here
@@ -426,15 +412,22 @@ b"""
 @act bar;baz;quux=me
 @link bar=#2
 @link me=#2
+""",
+b"""
 say Before
 @entrances #2
-QUIT
-""")
+""", use_dump=use_dump)
         result_after = result.split(b'Before')[1]
         self.assertTrue(b'\nfoo(#3E' in result)
         self.assertTrue(b'\nbar;baz;quux(#4E' in result)
         self.assertTrue(b'\nOne(#1P' in result)
         self.assertTrue(b'\n3 objects' in result)
+
+    def test_dump(self):
+        self._test(use_dump=True)
+
+    def test_nodump(self):
+        self._test(use_dump=False)
 
 class TestNameThing(ServerTestBase):
     def test_simplerename(self):
@@ -443,7 +436,6 @@ b"""
 @create Foo
 @name Foo=Bar
 ex Bar
-QUIT
 """)
         self.assertTrue(b'Type: THING' in result)
 
@@ -452,7 +444,6 @@ QUIT
 b"""
 @create Foo
 @name Foo=me
-QUIT
 """)
         self.assertTrue(b'That is not a reasonable name' in result)
 
@@ -465,7 +456,6 @@ b"""
 @link TestUser=#3
 @tel TestUser=home
 ex *TestUser
-QUIT
 """)
         self.assertTrue(b'Location: Beta' in result)
 
@@ -477,7 +467,6 @@ b"""
 @link TestThing=#3
 @tel TestThing=home
 ex #2
-QUIT
 """)
         self.assertTrue(b'Location: Beta' in result)
 
@@ -491,7 +480,6 @@ b"""
 @tel #4=#3
 @tel #3=#2
 @tel #2=#4
-QUIT
 """)
         self.assertTrue(b'contain itself' in result)
 
@@ -506,7 +494,6 @@ b"""
 @tel IdThree=TestUser
 @tel #4=#3
 @tel TestUser=#4
-QUIT
 """)
         self.assertTrue(b'contain themselves' in result)
 
@@ -519,7 +506,6 @@ b"""
 @link #3=#4
 @tel IdTwo=#3
 ex #2
-QUIT
 """)
         self.assertTrue(b'Location: IdFour' in result)
 
@@ -528,7 +514,6 @@ QUIT
 b"""
 @create IdTwo
 @tel IdTwo=badname
-QUIT
 """)
         self.assertTrue(b'Send it where?' in result)
 
@@ -538,7 +523,6 @@ class TestStats(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
 @stats
-QUIT
 """)
         self.assertTrue(b'1 room' in result)
         self.assertTrue(b'0 exit' in result)
@@ -549,7 +533,6 @@ class TestVersion(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
 @version
-QUIT
 """)
         self.assertTrue(b'Version: ' in result)
 
@@ -559,7 +542,6 @@ class TestInventory(ServerTestBase):
 b"""
 @create Foobar
 inventory
-QUIT
 """)
         self.assertTrue(b'You are carrying:\r\nFoobar' in result)
 
@@ -571,7 +553,6 @@ b"""
 @dig IdThree
 @tel #2=#3
 @find IdTw
-QUIT
 """)
         self.assertTrue(b'IdTwo(#2)\r\n***End' in result)
 
@@ -582,12 +563,10 @@ b"""
 @pcreate TestUser=foo
 @create TestObject
 @chown TestObject=TestUser
-QUIT
 """)
         result = self._do_full_session(b"""
 connect TestUser foo
 @owned
-QUIT
 """)
         self.assertTrue(b'TestObject' in result)
 
@@ -598,18 +577,21 @@ class TestScore(ServerTestBase):
         'start_pennies': '169',
         'penny_rate': '0',
     }
-    def test(self):
-        result_setup = self._do_full_session(CONNECT +
+    def _test(self, use_dump=False):
+        result_setup = self._do_dump_test(CONNECT +
 b"""
 @pcreate TestUser=foo
-QUIT
-""")
-        result = self._do_full_session(b"""
+""", b"""
 connect TestUser foo
 score
-QUIT
-""")
+""", use_dump=use_dump, prefix=b'')
         self.assertTrue(b'You have 169 PENNIES.' in result)
+
+    def test_dump(self):
+        self._test(use_dump=True)
+    
+    def test_nodump(self):
+        self._test(use_dump=False)
 
 
 class TestBoot(ServerTestBase):
@@ -618,7 +600,6 @@ class TestBoot(ServerTestBase):
 b"""
 @pcreate TestUser=foo
 @set *TestUser=W
-QUIT
 """)
         result = self._do_full_session(b"""
 connect TestUser foo
@@ -634,7 +615,6 @@ b"""
 @pcreate TestUser=foo
 @toad TestUser
 ex #2
-QUIT
 """)
         self.assertTrue(b'toad named TestUser' in result)
 
@@ -648,7 +628,6 @@ b"""
 @tel IdFour=TestUser
 @toad TestUser=NewUser
 ex #4
-QUIT
 """)
         self.assertTrue(b'Owner: NewUser' in result)
 
@@ -660,7 +639,6 @@ b"""
 @open foo;bar=#2=property
 ex me=_reg/property
 ex bar
-QUIT
 """)
         self.assertTrue(b'Destination: Beta' in result)
         self.assertTrue(b'- ref /_reg/property:foo;bar(#3E' in result)
@@ -672,15 +650,14 @@ b"""
 @create IdThree
 @open foo;bar=#2;#3=property
 ex bar
-QUIT
 """)
         self.assertTrue(b'Destination: IdTwo' in result)
         self.assertTrue(b'Destination: IdThree' in result)
 
 
 class TestEdit(ServerTestBase):
-    def test(self):
-        result = self._do_full_session(CONNECT +
+    def _test(self, use_dump):
+        result = self._do_dump_test(
 b"""
 @program foo.muf
 i
@@ -694,34 +671,47 @@ this was the fourth line
 this was inserted before the second line
 .
 q
+""",
+b"""
 @edit foo.muf
 n
 1 10 l
 q
-QUIT
-""")
+""", use_dump=use_dump)
         self.assertTrue(b'1: this was the first line' in result)
         self.assertTrue(b'2: this was inserted before the second line' in result)
         self.assertTrue(b'3: this was the fourth line' in result)
         self.assertTrue(b'3 lines displayed' in result)
 
+    def test_dump(self):
+        self._test(use_dump=True)
+    
+    def test_nodump(self):
+        self._test(use_dump=False)
+
 class TestAttach(ServerTestBase):
-    def test(self):
-        result = self._do_full_session(CONNECT +
+    def _test(self, use_dump=False):
+        result = self._do_dump_test(
 b"""
 @act foo=me
 @attach foo=#0
+""",
+b"""
 ex foo
-QUIT
-""")
+""", use_dump=use_dump)
         self.assertTrue(b'Source: Room Zero' in result)
+    
+    def test_dump(self):
+        self._test(use_dump=True)
+    
+    def test_nodump(self):
+        self._test(use_dump=False)
 
 class TestWall(ServerTestBase):
     def test(self):
         result = self._do_full_session(CONNECT +
 b"""
 @wall Hello world.
-QUIT
 """)
         self.assertTrue(b'One shouts, "Hello world."' in result)
 
@@ -732,7 +722,6 @@ class TestGripe(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
 gripe this is a gripe.
-QUIT
 """)
         self.assertTrue(b'Your complaint has been' in result)
         with open(os.path.join(self.server.game_dir, 'logs', 'gripes'), 'r') as fh:
@@ -748,7 +737,6 @@ b"""
 @open foo=#2
 @relink foo=#3
 ex foo
-QUIT
 """)
         self.assertTrue(b'Destination: IdThree' in result)
 
@@ -761,7 +749,6 @@ b"""
 @open foo=#2
 @relink foo=#3;#4
 ex foo
-QUIT
 """)
         self.assertTrue(b'Destination: IdThree' in result)
         self.assertTrue(b'Destination: IdFour' in result)
@@ -776,7 +763,6 @@ q
 @open foo=#2
 @relink foo=#3;#4
 ex foo
-QUIT
 """)
         self.assertTrue(b'Only one' in result)
         self.assertTrue(b'Destination IdFour.muf(#4FM3) ignored' in result)
@@ -792,7 +778,6 @@ b"""
 @open IdSix=IdFive
 @relink IdFour=IdSix
 ex IdFour
-QUIT
 """)
         self.assertTrue(b'would create a loop' in result)
         self.assertTrue(b'Destination: IdTwo' in result)
@@ -806,21 +791,27 @@ b"""
 @open foo=#2
 @unlink foo
 ex foo
-QUIT
 """)
         self.assertTrue(b'Destination: ' not in result)
 
 class TestGenderProp(ServerTestBase):
     extra_params = {'gender_prop': '_funnygender'}
 
-    def test_set(self):
-        result = self._do_full_session(CONNECT +
+    def _test_set(self, use_dump):
+        result = self._do_dump_test(
 b"""
 @propset me=str:sex:test
+""", b"""
 ex me=/
-QUIT
-""")
+""", use_dump=use_dump
+)
         self.assertTrue(b'- str /_funnygender:test' in result)
+
+    def test_set_nodump(self):
+        self._test_set(use_dump=False)
+    
+    def test_set_dump(self):
+        self._test_set(use_dump=True)
     
     def test_clear(self):
         result = self._do_full_session(CONNECT +
@@ -828,7 +819,6 @@ b"""
 @propset me=str:_funnygender:test
 @propset me=erase:sex
 ex me=/
-QUIT
 """)
         self.assertTrue(b'- dir /_/:' in result)
         self.assertTrue(b'1 propert' in result)
@@ -840,7 +830,6 @@ b"""
 @set me=_test:foo
 @propset me=erase:_test
 ex me=_test
-QUIT
 """)
         self.assertTrue(b'0 properties' in result)
 
@@ -851,7 +840,6 @@ b"""
 @set me=_test/bar:baz
 @propset me=erase:_test
 ex me=_test
-QUIT
 """)
         self.assertTrue(b'0 properties' in result)
 
@@ -863,7 +851,6 @@ b"""
 @propset me=int:_test:0
 ex me=_test/
 ex me=_test
-QUIT
 """)
         self.assertTrue(b'- str /_test/bar:baz' in result)
         self.assertTrue(b'1 property' in result)
@@ -875,7 +862,6 @@ class TestSweep(ServerTestBase):
         result = self._do_full_session(CONNECT +
 b"""
 @sweep
-QUIT
 """)
         self.assertTrue(b'One(#1PWM3) is a player.' in result)
 
@@ -890,7 +876,6 @@ c
 q
 @propset here=dbref:_listen/testlisten:test.muf
 @sweep
-QUIT
 """)
         self.assertTrue(b'Room Zero(#0R) is a listening room.' in result)
 
@@ -907,7 +892,6 @@ c
 q
 @set Foo=_listen/test:3
 @sweep
-QUIT
 """)
         self.assertTrue(b'Foo(#2) is a listener object owned by One(#1PWM3).' in result)
 
@@ -924,7 +908,6 @@ drop Foo
 @fail say=triggered
 say test
 @sweep
-QUIT
 """)
         self.assertTrue(b'says are trapped' in result)
 
@@ -944,7 +927,6 @@ q
 @fail say=triggered
 say test
 @sweep
-QUIT
 """)
         self.assertTrue(b'says are trapped' in result)
 
@@ -956,7 +938,6 @@ b"""
 @link me=#2
 home
 ex me
-QUIT
 """)
         self.assertTrue(b'Location: IdTwo(' in result)
 
@@ -973,7 +954,6 @@ drop IdTwo
 ex me
 leave
 ex me
-QUIT
 """)
         self.assertTrue(b'You exit the' in result)
         self.assertTrue(b'TestInsideDesc' in result)
@@ -989,7 +969,6 @@ drop IdTwo
 ex IdTwo
 get IdTwo
 ex IdTwo
-QUIT
 """)
         self.assertTrue(b'Location: Room Zero' in result)
         self.assertTrue(b'Location: One' in result)
@@ -1001,7 +980,6 @@ b"""
 @create IdTwo
 @recycle IdTwo
 ex #2
-QUIT
 """)
         self.assertTrue(b'is garbage.' in result)
 
@@ -1013,16 +991,22 @@ class TestSet(ServerTestBase):
         'penny_rate': '0',
         'pcreate_flags': 'BH',
     }
-    def test_clear(self):
-        result = self._do_full_session(CONNECT +
+    def _test_clear(self, use_dump):
+        result = self._do_dump_test(CONNECT +
 b"""
 @create Foo
 @set Foo=_/foo/bar/baz:test
 @set Foo=:clear
+""",b"""
 ex Foo=/
-QUIT
-""")
+""", use_dump=use_dump)
         self.assertTrue(b'0 propert' in result)
+
+    def test_clear_nodump(self):
+        self._test_clear(use_dump=False)
+
+    def test_clear_dump(self):
+        self._test_clear(use_dump=True)
 
     def test_clear_priv(self):
         result_setup= self._do_full_session(CONNECT +
@@ -1033,13 +1017,11 @@ b"""
 @set Foo=_not/~special:bazquux
 @chown Foo=TestUser
 drop Foo
-QUIT
 """)
         result = self._do_full_session(b"""
 connect TestUser foo
 @set Foo=:clear
 ex Foo=/
-QUIT
 """)
         self.assertTrue(b'1 propert' in result)
         self.assertTrue(b'~specialprop' in result)
@@ -1054,7 +1036,6 @@ b"""
 ex Foo=_test
 @unbless Foo=_test
 ex foo=_test
-QUIT
 """)
         self.assertTrue(b'B str' in result)
         self.assertTrue(b'- str' in result)
@@ -1075,7 +1056,6 @@ b"""
 @pcreate Foo=pass
 @force Foo=@create Bar
 ex #3
-QUIT
 """)
         self.assertTrue(b'Owner: Foo' in result)
 
@@ -1083,7 +1063,6 @@ QUIT
         result_setup = self._do_full_session(CONNECT +
 b"""
 @pcreate TestUser=foo
-QUIT
 """)
         result = self._do_full_session(b"""
 connect TestUser foo
@@ -1094,7 +1073,6 @@ connect TestUser foo
 drop Foo
 @force Foo=@set me=_test:bar
 ex Foo=_test
-QUIT
 """)
         self.assertTrue(b'- str /_test:bar' in result)
 
@@ -1102,7 +1080,6 @@ QUIT
         result_setup = self._do_full_session(CONNECT +
 b"""
 @pcreate TestUser=foo
-QUIT
 """)
         result = self._do_full_session(b"""
 connect TestUser foo
@@ -1112,7 +1089,6 @@ connect TestUser foo
 @set Foo=X
 drop Foo
 @force Foo=@set me=_test:bar
-QUIT
 """)
         self.assertTrue(b'not force-locked' in result)
 

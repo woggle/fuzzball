@@ -23,7 +23,6 @@ q
 @link runtest=test.muf""" + before + b"""
 runtest
 """ + after + b"""
-QUIT
 """)
         self.assertTrue(b'\nTest passed.' in result)
         return result
@@ -47,7 +46,6 @@ q
 @fail test=Your message.
 test
 @ps
-QUIT
 """)
         # Either in @ps output or directly
         self.assertTrue(b'One This is a message.' in result)
@@ -69,7 +67,6 @@ q
 @fail test=Your message.
 test
 @ps
-QUIT
 """)
         # Either in @ps output or directly
         self.assertTrue(b'One This is a message.' in result)
