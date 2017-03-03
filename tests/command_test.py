@@ -308,7 +308,7 @@ b"""
 @act testAct=#3
 @tel *TestPlayer=#5
 """,
-"""
+b"""
 examine *TestPlayer
 """, use_dump=use_dump)
         self.assertTrue(b'TestPlayer(#3PBH' in result)
@@ -577,21 +577,26 @@ class TestScore(ServerTestBase):
         'start_pennies': '169',
         'penny_rate': '0',
     }
-    def _test(self, use_dump=False):
-        result_setup = self._do_dump_test(CONNECT +
+    def test_dump(self):
+        result = self._do_dump_test(CONNECT +
 b"""
 @pcreate TestUser=foo
 """, b"""
 connect TestUser foo
 score
-""", use_dump=use_dump, prefix=b'')
+""", prefix=b'')
         self.assertTrue(b'You have 169 PENNIES.' in result)
 
-    def test_dump(self):
-        self._test(use_dump=True)
-    
     def test_nodump(self):
-        self._test(use_dump=False)
+        result_setup = self._do_full_session(CONNECT + 
+b"""
+@pcreate TestUser=foo
+""")
+        result = self._do_full_session(b"""
+connect TestUser foo
+score
+""")
+        self.assertTrue(b'You have 169 PENNIES.' in result)
 
 
 class TestBoot(ServerTestBase):
