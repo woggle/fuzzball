@@ -158,7 +158,7 @@ class Server(object):
         self.forward_stdout = asyncio.ensure_future(self._forward_stdout())
         self.forward_stderr = asyncio.ensure_future(self._forward_stderr())
         self.process_wait = asyncio.ensure_future(self.process.wait())
-        yield from asyncio.sleep(1) # wait for server to bind, etc.
+        yield from asyncio.sleep(0.2) # wait for server to bind, etc.
 
     def _stop(self, timeout):
         logging.info('about to SIGTERM to %d', self.process.pid)
@@ -259,6 +259,7 @@ def send_and_quit_wait(reader, writer, main_input):
     writer.write(b'QUIT\r\n')
     yield from writer.drain()
     result += yield from reader.read()
+    writer.close()
     return result
 
 class ServerTestBase(unittest.TestCase):
