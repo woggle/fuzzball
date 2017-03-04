@@ -16,6 +16,7 @@ class TestSetClearError(MufProgramTestBase):
     "IBOUNDS" set_error not if "failed set IBOUNDS" abort then
     "DIV_ZERO" is_set? not if "DIV_ZERO unset" abort then
     "IBOUNDS" is_set? not if "IBOUNDS unset" abort then
+    "ibounds" is_set? not if "IBOUNDS unset" abort then
     err_divzero? not if "err_divzero? false" abort then
     err_ibounds? not if "err_ibounds? false" abort then
     "IBOUNDS" clear_error
