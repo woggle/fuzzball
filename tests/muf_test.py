@@ -20,7 +20,8 @@ c
 q
 @set test.muf=D
 @act runtest=me
-@link runtest=test.muf""" + before + b"""
+@link runtest=test.muf
+""" + before + b"""
 runtest
 """ + after + b"""
 """)
@@ -597,6 +598,384 @@ QUIT
 : main
     { 1 #0 3.0 "test" }list array_interpret
     "1Room Zero3.0test" strcmp not if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_union(self):
+        self._test_program(b"""
+: main
+    { 1 2 3 "test" #1 }list
+    { 3 4 5 "test" "test2" #2 }list
+    { "other" }list
+    3 array_nunion
+    0 array_sort
+    { 1 2 3 4 5 "test" "test2" "other" #1 #2 }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_intersection_empty(self):
+        self._test_program(b"""
+: main
+    { 1 2 3 "test" #1 }list
+    { 3 4 5 "test" "test2" #2 }list
+    { "other" }list
+    3 array_nintersect
+    array_count 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+    
+    def test_array_intersection(self):
+        self._test_program(b"""
+: main
+    { 1 2 3 "test" "test2" #1 #2 }list
+    { 3 4 5 "test" "test2" #2 }list
+    { #2 "other" "test2" }list
+    3 array_nintersect
+    0 array_sort
+    { "test2" #2 }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_difference(self):
+        self._test_program(b"""
+: main
+    { 3 4 5 "test" "test2" #2 }list
+    { #2 "other" "test2" }list
+    { 1 2 3 "test" #1 }list
+    3 array_ndiff
+    0 array_sort
+    { 1 2 #1 }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+    
+    def test_array_sort_indexed(self):
+        self._test_program(b"""
+: main
+    {
+        { "name" "One"     "num" 1 }dict
+        { "name" "Two"     "num" 2 }dict
+        { "name" "Three"   "num" 3 }dict
+    }list
+    SORTTYPE_DESCENDING "num" ARRAY_SORT_INDEXED
+    {
+        { "name" "Three"   "num" 3 }dict
+        { "name" "Two"     "num" 2 }dict
+        { "name" "One"     "num" 1 }dict
+    }list
+    array_compare 0 =
+    if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_findval_simple(self):
+        # documentation example
+        self._test_program(b"""
+: main
+    { #5 #10 #15 #10 #20 }list #10 array_findval  
+    { 1 3 }list array_compare 0 =
+    if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_compare_simple(self):
+        self._test_program(b"""
+: main
+    { #5 #10 #15 #10 #20 }list 
+    { #5 #10 #16 #10 #20 }list array_compare
+    0 <
+    { #5 #10 #15 #10 #21 }list 
+    { #5 #10 #15 #10 #20 }list array_compare
+    0 > and
+    { #5 "#1&#2" parselock }list 
+    { #5 "#1|#2" parselock }list array_compare
+    0 != and
+    if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+
+
+    def test_array_excludeval(self):
+        self._test_program(b"""
+: main
+    { #5 #10 #15 #10 #20 }list #10 array_excludeval
+    { 0 2 4 }list array_compare 0 =
+    if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+class TestArrayFilterFlags(MufProgramTestBase):
+    
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    { #0 #1 #2 #3 #4 #5 }list "PW" array_filter_flags { #1 }list array_compare 0 =
+    { #0 #1 #2 #3 #4 #5 }list "P!W" array_filter_flags { #4 }list array_compare 0 = and
+    { #0 #1 #2 #3 #4 #5 }list "P" array_filter_flags { #1 #4 }list array_compare 0 = and
+    { #0 #1 #2 #3 #4 #5 }list "R" array_filter_flags { #0 }list array_compare 0 = and
+    { #0 #1 #2 #3 #4 #5 }list "!T" array_filter_flags { #0 #1 #2 #3 #4 }list array_compare 0 = and
+    if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""", before=b"""
+@pcreate IdFour=test
+@create IdFive
+""")
+
+class TestArrayProps(MufProgramTestBase):
+    def test_array_get_propdirs_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_test/_bar/_foo" 1 setprop
+    dup "_test/quux" 2 setprop
+    dup "_test/.secret/_stuff" 2 setprop
+    dup "_test" array_get_propdirs
+    0 array_sort
+    { "_bar" ".secret" }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_get_propdirs_wizprops(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_test/_bar/_foo" 1 setprop
+    dup "_test/quux" 2 setprop
+    dup "_test/.secret/_stuff" 2 setprop
+    dup "_test/@doublesecret/foo" 3 setprop
+    dup "_test/~unsecret/foo" 4 setprop
+    dup "_test" array_get_propdirs
+    0 array_sort
+    { "_bar" ".secret" "@doublesecret" "~unsecret" }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""",before=b"@set test.muf=W")
+
+    def test_array_get_propdirs_wizprops_unreadable(self):
+        self._test_program(b"""
+: main
+    #2
+    dup "_test/_bar/_foo" 1 setprop
+    dup "_test/quux" 2 setprop
+    dup "_test/.secret/_stuff" 2 setprop
+    dup "_test" array_get_propdirs
+    0 array_sort
+    { "_bar" ".secret" }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""",before=b"""
+@create Foo
+@set Foo=_test/@doublesecret:foo
+@set Foo=_test/@doublesecret/bar:quux
+""")
+
+
+
+class TestArrayDict(MufProgramTestBase):
+    def test_array_get_propvals_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_test/_bar" 1 setprop
+    dup "_test/quux" #2 setprop
+    dup "_test/xyxxy" "stuff" setprop
+    dup "_test/.secret" "#1&#0" parselock setprop
+    dup "_test/.verysecret" 2.0 setprop
+    dup "_test" array_get_propvals
+    {
+            "_bar" 1 
+            "quux" #2
+            "xyxxy" "stuff"
+            ".secret" "#1&#0" parselock
+            ".verysecret" 2.0
+    }dict
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+   
+    # FIXME: test permission denied 
+    def test_array_get_proplist_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_test#/1" 1 setprop
+    dup "_test#/2" #2 setprop
+    dup "_test#/3" "stuff" setprop
+    dup "_test#/4" "#1&#0" parselock setprop
+    dup "_test#/5" 2.0 setprop
+    dup "_test#" 5 setprop
+    dup "_test" array_get_proplist
+    {
+            1
+            #2
+            "stuff"
+            "#1&#0" parselock
+            2.0
+    }list
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+    
+    # FIXME: test permission denied
+    def test_array_put_propvals_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_testdir"
+    {
+            "first" 1 
+            "second" #2
+            "third" "stuff"
+            "fourth" "#1&#0" parselock
+            "fifth" 2.0
+    }dict
+    array_put_propvals
+    dup "_testdir/first" getprop 1 = 
+    over "_testdir/second" getprop dup dbref? swap #2 = and and
+    over "_testdir/third" getprop "stuff" strcmp not and
+    over "_testdir/fourth" getprop unparselock "#1&#0" parselock unparselock strcmp not and
+    over "_testdir/fifth" getprop 2.0 = and
+    if 
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_put_proplist_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_testdir"
+    {
+            1 
+            #2
+            "stuff"
+            "#1&#0" parselock
+            2.0
+    }list
+    array_put_proplist
+    dup "_testdir#/1" getprop 1 = 
+    over "_testdir#/2" getprop dup dbref? swap #2 = and and
+    over "_testdir#/3" getprop "stuff" strcmp not and
+    over "_testdir#/4" getprop unparselock "#1&#0" parselock unparselock strcmp not and
+    over "_testdir#/5" getprop 2.0 = and
+    over "_testdir#" getprop 5 = and
+    if 
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_get_reflist_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_testprop" "#1234 #5678 #2356" setprop
+    dup "_testprop" array_get_reflist
+    { #1234 #5678 #2356 }list array_compare 0 = 
+    if 
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_put_reflist_simple(self):
+        self._test_program(b"""
+: main
+    me @ "Foo" newobject
+    dup "_testprop" { #1234 #5678 #2356 }list array_put_reflist
+    "_testprop" getprop "#1234 #5678 #2356" strcmp not
+    if 
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
+    def test_array_extract_simple(self):
+        self._test_program(b"""
+: main
+    { #5 #10 #15 #10 #20 }list 
+    { 0 3 4 }list array_extract
+    { 0 #5  3 #10  4 #20 }dict array_compare 0 =
+    if
       me @ "Test passed." notify
     else
       me @ "Test failed." notify
