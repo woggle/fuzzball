@@ -609,7 +609,7 @@ b"""
         result = self._do_full_session(b"""
 connect TestUser foo
 @boot TestUser
-""")
+""", autoquit=False)
         self.assertTrue(b'You have been booted' in result)
 
 class TestToadNoRecycle(ServerTestBase):
