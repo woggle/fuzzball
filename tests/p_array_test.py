@@ -4,7 +4,7 @@ import logging
 import re
 import unittest
 
-from fbmuck.server import Server, ServerTestBase, MufProgramTestBase
+from fbmuck.server import Server, ServerTestBase, MufProgramTestBase, CONNECT_GOD
 
 class TestArrayFlat(MufProgramTestBase):
     def test_simple_get(self):
@@ -255,7 +255,7 @@ class TestArrayFlat(MufProgramTestBase):
 """)
     
     def test_array_notify(self):
-        result = self._do_full_session(CONNECT +
+        result = self._do_full_session(CONNECT_GOD +
 b"""
 @program test.muf
 i

@@ -261,10 +261,7 @@ def send_and_quit_wait(reader, writer, main_input):
         yield from writer.drain()
     except:
         pass # ignore connection lost, etc.
-    try:
-        result += yield from reader.read()
-    except:
-        pass # ignore connection lost, etc.
+    result += yield from reader.read()
     writer.close()
     return result
 
@@ -361,3 +358,23 @@ class ServerTestBase(unittest.TestCase):
             print("### CONNECTION LOG ###\n", self.read_log.decode(errors='backslashreplace'))
         self.assertEqual(self.server.exit_code(), 0)
         self.server.cleanup()
+
+class MufProgramTestBase(ServerTestBase):
+    def _test_program(self, program, before=b"", after=b""):
+        result = self._do_full_session(CONNECT_GOD +
+b"""
+@program test.muf
+i
+""" + program + b"""
+.
+c
+q
+@set test.muf=D
+@act runtest=me
+@link runtest=test.muf
+""" + before + b"""
+runtest
+""" + after + b"""
+""")
+        self.assertTrue(b'\nTest passed.' in result)
+        return result
