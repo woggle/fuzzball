@@ -257,7 +257,10 @@ def send_and_quit_wait(reader, writer, main_input):
         if len(line) == 0:
             break
     writer.write(b'QUIT\r\n')
-    yield from writer.drain()
+    try:
+        yield from writer.drain()
+    except:
+        pass # ignore connection lost, etc.
     result += yield from reader.read()
     writer.close()
     return result
