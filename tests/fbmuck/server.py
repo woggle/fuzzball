@@ -261,7 +261,10 @@ def send_and_quit_wait(reader, writer, main_input):
         yield from writer.drain()
     except:
         pass # ignore connection lost, etc.
-    result += yield from reader.read()
+    try:
+        result += yield from reader.read()
+    except:
+        pass # ignore connection lost, etc.
     writer.close()
     return result
 
