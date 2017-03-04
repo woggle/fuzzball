@@ -206,7 +206,7 @@ class TestTan(MufProgramTestBase):
     def test_error_nan(self):
         result = self._test_program(b"""
 : main
-    pi 3.0 / tan pop error? err_nan? and
+    pi 2.0 / tan pop error? err_nan? and
     if
         me @ "Test passed." notify
     then

@@ -270,7 +270,6 @@ q
 @act runtest=me
 @link runtest=test.muf
 runtest
-QUIT
 """)
         self.assertTrue(b'\nThis is the first line.' in result)
         self.assertTrue(b'\nThis is the second line.' in result)
