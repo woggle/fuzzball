@@ -382,6 +382,44 @@ class TestStrCat(MufProgramTestBase):
 ;
 """)
 
+class TestIntoStr(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+lvar localVarNumberZero
+: main
+    1
+    1 intostr "1" strcmp not and
+    #1 intostr "1" strcmp not and
+    1.0 intostr strtof 1.0 = and
+    me intostr "0" strcmp not and
+    localVarNumberZero intostr "0" strcmp not and
+    { }list 1 try intostr pop 0 and catch pop 1 and endcatch
+    if me @ "Test passed." notify then
+;
+""")
+    
+class TestExplode(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    "foo::::bar::baz::quux" "::" explode
+    array_make
+    { "quux" "baz" "bar" "" "foo" }list
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestExplodeArray(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    "foo::::bar::baz::quux" "::" explode_array
+    { "foo" "" "bar" "baz" "quux" }list
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
 
 class TestAToI(MufProgramTestBase):
     def test_simple(self):
@@ -457,6 +495,349 @@ q
 @propset me=dbref:_listen:listener.muf
 """)
         self.assertTrue(b"FAILED" not in result)
+
+
+class TestSubst(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    "foobarbazbarbaz" "quux" "bar" subst
+    "fooquuxbazquuxbaz" strcmp not 
+    if me @ "Test passed." notify then
+;
+""")
+    
+    def test_overflow_one(self):
+        self._test_program(b"""
+: main
+    0 try
+        "foobar" begin "barquux" "bar" subst repeat
+    catch "overflow" instring if me @ "Test passed." notify then endcatch
+;
+""")
+
+    def test_overflow_two(self):
+        self._test_program(b"""
+: main
+    0 try
+        "foobar" begin "quuxbar" "bar" subst repeat
+    catch "overflow" instring if me @ "Test passed." notify then endcatch
+;
+""")
+
+
+class TestInstr(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1
+    "" "x" instr not and
+    "foobarbazbar" "bar" instr 4 = and
+    "barfoobar" "bar" instr 1 = and
+    "barfoobazbar" "quux" instr not and
+    "foo" "foo" instr 1 = and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestRInstr(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1
+    "" "x" rinstr not and
+    "foobarbazbar" "bar" rinstr 10 = and
+    "barfoobar" "bar" rinstr 7 = and
+    "barfoobazbar" "quux" rinstr not and
+    "bar" "bar" rinstr 1 = and
+    "xxxbar" "bar" rinstr 4 = and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestInstring(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1
+    "" "x" instring not and
+    "fOobArbazbar" "bar" instring 4 = and
+    "baRfooBAr" "BAR" instring 1 = and
+    "barFoobazbar" "quux" instring not and
+    "FoO" "fOo" instring 1 = and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestRInstring(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1
+    "" "x" rinstring not and
+    "foobaRbazbAR" "bar" rinstring 10 = and
+    "barfooBAr" "bAR" rinstring 7 = and
+    "barfoobazbAr" "quux" rinstring not and
+    "bar" "BAR" rinstring 1 = and
+    "xxxbAr" "Bar" rinstring 4 = and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestPronounSub(MufProgramTestBase):
+    extra_params =  { 'gender_prop': '_genderthingy' }
+
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1 
+    #1 "_genderthingy" "female" setprop
+    #1 "%N" "the One" setprop
+    #1 "%N:%n:%a:%A:%s:%S:%o:%O:%p:%P:%r:%R:" pronoun_sub
+    me @ over notify
+    "The One:the One:hers:Hers:she:She:her:Her:her:Her:herself:Herself:" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+    # FIXME test breaks because %x:%N... does something bad
+    @unittest.skip("known bugs here")
+    def test_props(self):
+        self._test_program(b"""
+: main
+    1 
+    #0 "testObjectThingy" newobject
+    dup "_genderthingy" "herm" setprop
+    dup "%N" "testObjecty" setprop
+    dup "%a" "alpha" setprop
+    dup "%x" "stuff" setprop
+    dup "_pronouns/herm/%p" "beta" setprop
+    #0 "_pronouns/herm/%o" "delta" setprop
+    #0 "_pronouns/herm/%r" "%N's omega" setprop
+    "%N:%n:%a:%A:%s:%S:%o:%O:%p:%P:%r:%R:%x" pronoun_sub
+    me @ over notify
+    "TestObjecty:testObjecty:alpha:Alpha:sie:Sie:delta:Delta:beta:Beta:testObjectThingy's omega:TestObjectThingy's omega:stuff" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+    # FIXME: should test MPI running from pronoun_sub
+
+    def test_overflow(self):
+        self._test_program(b"""
+: main
+    #1 "_genderthingy" "female" setprop
+    1 
+    #1 "%N" "alonglonglonglonglonglonglonglonglonglonglonglonglongstring" setprop
+    0 "" begin
+        "%N" strcat #1 over pronoun_sub strlen
+        rot over = not while
+        swap
+    repeat
+    me @ "Test passed." notify
+;
+""")
+
+
+class TestToUpper(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1 
+    "" toupper "" strcmp not and
+    "foo" toupper "FOO" strcmp not and
+    "fOo123bar" toupper "FOO123BAR" strcmp not and 
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestToLower(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1 
+    "" tolower "" strcmp not and
+    "FOO" tolower "foo" strcmp not and
+    "FOo123BaR" tolower "foo123bar" strcmp not and 
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestUnparseObj(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(b"""
+: main
+    1 
+    #1 unparseobj "One(#1PWM3)" strcmp not and
+
+    #0 "Test Object" newobject
+    dup "V" set 
+    dup "Z" set
+    unparseobj
+    "Test Object(#4VZ)" strcmp not and
+
+    #-1 unparseobj "*NOTHING*" strcmp not and
+
+    #400 unparseobj "*INVALID*" strcmp not and
+    
+    #-4 unparseobj "*NIL*" strcmp not and
+
+    #-3 unparseobj "*HOME*" strcmp not and
+
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestSMatch(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" "" smatch and
+    "foobar" "FOOBAR" smatch and
+    "foobar" "foobaz" smatch not and
+    "foobar" "*b?r" smatch and
+    "foobar" "*b?z" smatch not and
+    "foobar" "{foo}bar" smatch not and
+    "foo bar" "{foo|baz} bar" smatch and
+    "baz bar" "{foo|baz} bar" smatch and
+    "foo bar" "{foo}*" smatch and
+    "foobar" "{foo}*" smatch not and
+    "foobarbaz" "[a-g]oo*" smatch and
+    "foobarbaz" "[^e]oo*" smatch and
+    "foobarbaz" "[^f]oo*" smatch not and
+    "^foo{bar}" "\\^foo?bar\\}" smatch and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestStripLead(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" striplead "" strcmp not and
+    "  \rfoo  " striplead "foo  " strcmp not and
+    "           bar" striplead "bar" strcmp not and
+    "x" striplead "x" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestStripTail(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" striptail "" strcmp not and
+    "  foo  \r \r  " striptail "  foo" strcmp not and
+    "bar        \r    " striptail "bar" strcmp not and
+    "x" striptail "x" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestStringPfx(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" "" stringpfx and
+    "foo" "foo" stringpfx and
+    "foobar" "foo" stringpfx and
+    "foobar" "FOO" stringpfx and
+    "" "foo" stringpfx not and
+    "foo" "foobar" stringpfx not and
+    "foo" "fou" stringpfx not and
+    "foobar" "fou" stringpfx not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestAttr(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "foo" "reset" textattr "\[[0mfoo\[[0m" strcmp not and
+    "foo" "normal" textattr "\[[0mfoo\[[0m" strcmp not and
+    "foo" "red,bg_black,reverse" textattr "\[[31m\[[40m\[[7mfoo\[[0m" strcmp not and
+    "foo" "black,bg_red,bold" textattr "\[[30m\[[41m\[[1mfoo\[[0m" strcmp not and
+    "foo" "green,bg_green,dim" textattr "\[[32m\[[42m\[[2mfoo\[[0m" strcmp not and
+    "foo" "yellow,bg_yellow,italic" textattr "\[[33m\[[43m\[[3mfoo\[[0m" strcmp not and
+    "foo" "blue,bg_blue,underline" textattr "\[[34m\[[44m\[[4mfoo\[[0m" strcmp not and
+    "foo" "magenta,bg_magenta,ostrike" textattr "\[[35m\[[45m\[[9mfoo\[[0m" strcmp not and
+    "foo" "cyan,bg_cyan,flash" textattr "\[[36m\[[46m\[[5mfoo\[[0m" strcmp not and
+    "foo" "white,bg_white,overstrike" textattr "\[[37m\[[47m\[[9mfoo\[[0m" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestTokenSplit(MufProgramTestBase):
+    def test_doc_example(self):
+        self._test_program(rb"""
+: main
+    1
+    "ab//cd/'efg'hi//jk'lm"   "'"   "/"   TOKENSPLIT
+    3 array_make
+    "ab/cd'efg"   "hi//jk'lm"   "'"
+    3 array_make
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_doc_example_otherdelim(self):
+        self._test_program(rb"""
+: main
+    1
+    "ab//cd/'efg'hi//jk'lm"   ":'"   "/"   TOKENSPLIT
+    3 array_make
+    "ab/cd'efg"   "hi//jk'lm"   "'"
+    3 array_make
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_end(self):
+        self._test_program(rb"""
+: main
+    1
+    "foo/bar"   "'"   "/"   TOKENSPLIT
+    3 array_make
+    "foobar"   ""   ""
+    3 array_make
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+    
+    def test_empty(self):
+        self._test_program(rb"""
+: main
+    1
+    ""   ":"   ""   TOKENSPLIT
+    3 array_make
+    ""   ""   ""
+    3 array_make
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_esc_is_del(self):
+        self._test_program(rb"""
+: main
+    1
+    "foo//bar/baz/quux"   "/"   "/x"   TOKENSPLIT
+    3 array_make
+    "foo/bar"   "baz/quux"   "/"
+    3 array_make
+    array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
 
 
 if __name__ == '__main__':
