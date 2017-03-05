@@ -839,6 +839,117 @@ class TestTokenSplit(MufProgramTestBase):
 ;
 """)
 
+class TestAnsiStrlen(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" ansi_strlen 0 = and
+    "foobar" ansi_strlen 6 = and
+    "\[[0mfoo\[[3;03mbar\[[0m" ansi_strlen 6 = and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestAnsiStrcut(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" 0 ansi_strcut "" strcmp not swap "" strcmp not and and
+    "foobar" 3 ansi_strcut "bar" strcmp not swap "foo" strcmp not and and
+    "foobar" 6 ansi_strcut "" strcmp not swap "foobar" strcmp not and and
+    "foobar" 7 ansi_strcut "" strcmp not swap "foobar" strcmp not and and
+    "foobar" 0 ansi_strcut "foobar" strcmp not swap "" strcmp not and and
+    "\[[0mfoo\[[3;03mbar\[[0m" 6 ansi_strcut
+        "\[[0m" strcmp not 
+        swap "\[[0mfoo\[[3;03mbar" strcmp not and and
+    "\[[0mfoo\[[3;03mbar\[[0m" 7 ansi_strcut
+        "" strcmp not 
+        swap "\[[0mfoo\[[3;03mbar\[[0m" strcmp not and and
+    "\[[0mfoo\[[3;03mbar\[[0m" 2 ansi_strcut
+        "o\[[3;03mbar\[[0m" strcmp not 
+        swap "\[[0mfo" strcmp not and and
+    "\[[0mfoo\[[3;03mbar\[[0m" 3 ansi_strcut
+        "\[[3;03mbar\[[0m" strcmp not 
+        swap "\[[0mfoo" strcmp not and and
+    "\[[0mfoo\[[3;03mbar\[[0m" 0 ansi_strcut
+        "\[[0mfoo\[[3;03mbar\[[0m" strcmp not 
+        swap "" strcmp not  and and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestAnsiStrip(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" ansi_strip "" strcmp not and
+    "foobar" ansi_strip "" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" ansi_strip "foobar" strcmp not and
+    "\[[00000foobarquux" ansi_strip "foobarquux" strcmp not and
+    "stuff\[[35;45mstuff" ansi_strip "stuffstuff" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestAnsiMidStr(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" 1 0 ansi_midstr "" strcmp not and
+    "foobar" 4 3 ansi_midstr "bar" strcmp not and
+    "foobar" 4 4 ansi_midstr "bar" strcmp not and
+    "foobar" 7 2 ansi_midstr "" strcmp not and
+    "foobar" 8 2 ansi_midstr "" strcmp not and
+    "foobar" 1 7 ansi_midstr "foobar" strcmp not and
+    "foobar" 1 6 ansi_midstr "foobar" strcmp not and
+    "foobar" 1 5 ansi_midstr "fooba" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 1 6 ansi_midstr
+        "\[[0mfoo\[[3;03mbar" strcmp not and 
+    "\[[0mfoo\[[3;03mbar\[[0m" 6 2 ansi_midstr
+        "r\[[0m" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 6 1 ansi_midstr
+        "r" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 7 1 ansi_midstr
+        "\[[0m" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 1 7 ansi_midstr
+        "\[[0mfoo\[[3;03mbar\[[0m" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 3 3 ansi_midstr
+        "o\[[3;03mba" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 4 4 ansi_midstr
+        "\[[3;03mbar\[[0m" strcmp not and
+    "\[[0mfoo\[[3;03mbar\[[0m" 4 0 ansi_midstr
+        "" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestMD5(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" md5hash "d41d8cd98f00b204e9800998ecf8427e" strcmp not and
+    "test" md5hash "098f6bcd4621d373cade4e832627b4f6" strcmp not and
+    "test\r" md5hash "1fd94de8c776d546d46902d35a437fe2" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestSHA1(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    1
+    "" sha1hash "da39a3ee5e6b4b0d3255bfef95601890afd80709" strcmp not and
+    "test" sha1hash "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3" strcmp not and
+    "test\r" sha1hash "923f760def6227e59cf25c6feaef8a2598a5de97" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
