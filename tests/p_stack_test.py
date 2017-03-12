@@ -33,6 +33,13 @@ class TestStack(MufProgramTestBase):
     then
 ;
 """)
+    
+    def test_popn_badarg(self):
+        self._test_program(b"""
+: main
+    0 try -3 popn catch pop me @ "Test passed." notify endcatch
+;
+""")
 
     def test_dupn(self):
         self._test_program(b"""
@@ -181,6 +188,15 @@ class TestStack(MufProgramTestBase):
     else
         me @ "Test failed." notify
     then
+;
+""")
+    
+    def test_rotate_badarg(self):
+        self._test_program(b"""
+: main
+    0 try 2 rotate catch
+        pop me @ "Test passed." notify
+    endcatch
 ;
 """)
     
