@@ -40,7 +40,7 @@ def get_server_options():
 
 class Server(object):
     def __init__(self, input_database=None, params={}, normal_port=TEST_PORT, ssl_port=TEST_SSL_PORT,
-                 game_dir=None):
+                 game_dir=None, timezone=None):
         self.input_database = input_database
         if not self.input_database:
             self.input_database = os.path.join(SOURCE_ROOT_DIR, MINIMAL_DB_PATH)
@@ -52,6 +52,7 @@ class Server(object):
         self.normal_port = normal_port
         self.ssl_port = ssl_port
         self.params = params
+        self.timezone = timezone
         assert(self.normal_port and self.ssl_port)
 
     @asyncio.coroutine
@@ -150,15 +151,19 @@ class Server(object):
             command_line += ['-sport', str(self.ssl_port)]
 
         logging.debug('server command line is %s', command_line)
+        my_env = os.environ.copy()
+        if self.timezone:
+            my_env['TZ'] = self.timezone
         self.process = \
             yield from asyncio.create_subprocess_exec(*command_line, cwd=self.game_dir,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE)
+                stderr=asyncio.subprocess.PIPE,
+                env=my_env)
         self.forward_stdout = asyncio.ensure_future(self._forward_stdout())
         self.forward_stderr = asyncio.ensure_future(self._forward_stderr())
         self.process_wait = asyncio.ensure_future(self.process.wait())
-        yield from asyncio.sleep(0.1) # wait for server to bind, etc.
+        yield from asyncio.sleep(0.2) # wait for server to bind, etc.
 
     def _stop(self, timeout):
         logging.info('about to SIGTERM to %d', self.process.pid)
@@ -269,6 +274,7 @@ class ServerTestBase(unittest.TestCase):
     use_ssl = None
     use_ipv6 = None
     extra_params = {}
+    timezone = 'UTC'
 
     def setUp(self):
         options = asyncio.get_event_loop().run_until_complete(get_server_options())
@@ -280,7 +286,7 @@ class ServerTestBase(unittest.TestCase):
             self.use_ssl = 'SSL' in options
         if self.use_ipv6 == None:
             self.use_ipv6 = 'IPV6' in options
-        self.server = Server(params=self.extra_params)
+        self.server = Server(params=self.extra_params, timezone=self.timezone)
         self.read_log = b''
         asyncio.get_event_loop().run_until_complete(self.server.start())
 
