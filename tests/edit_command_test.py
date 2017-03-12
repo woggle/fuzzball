@@ -37,7 +37,7 @@ q
 
     def test_dump(self):
         self._test(use_dump=True)
-    
+
     def test_nodump(self):
         self._test(use_dump=False)
 
