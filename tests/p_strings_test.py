@@ -122,7 +122,7 @@ class TestFmtString(MufProgramTestBase):
     endcatch
 ;
 """)
-    
+
     def test_bad_arg(self):
         self._test_program(rb"""
 : main
@@ -139,7 +139,7 @@ class TestArrayFmtString(MufProgramTestBase):
             "a" 3.14
         }dict
     }list
-    "%4.2[a]f" 
+    "%4.2[a]f"
     array_fmtstrings { "3.14" }list array_compare 0 = if
         me @ "Test passed." notify
     then
@@ -166,13 +166,13 @@ class TestArrayFmtString(MufProgramTestBase):
     "%-16.15[username]s %3[count]i %5[object]d %4.2[4]f"
     array_fmtstrings
     dup 0 array_getitem me @ swap notify
-    { 
+    {
     "Johnny             4   #18 3.14"
     "Ghaladahsk_Fadj  123   #97 0.00"
     }list array_compare 0 =
     if me @ "Test passed." notify then
 ;
-""") 
+""")
 
     def test_overflow(self):
         self._test_program(b"""
@@ -202,7 +202,7 @@ class TestSplit(MufProgramTestBase):
     "bar:baz::quux" strcmp not
     swap "foo" strcmp not and
     "foo:bar" "::" split
-    "" strcmp not 
+    "" strcmp not
     swap "foo:bar" strcmp not and
     and
     if me @ "Test passed." notify then
@@ -215,10 +215,10 @@ class TestRSplit(MufProgramTestBase):
         self._test_program(b"""
 : main
     "foo::bar:baz::quux" "::" rsplit
-    "quux" strcmp not 
+    "quux" strcmp not
     swap "foo::bar:baz" strcmp not and
     "foo:bar" "::" rsplit
-    "" strcmp not 
+    "" strcmp not
     swap "foo:bar" strcmp not and
     and
     if me @ "Test passed." notify then
@@ -262,7 +262,7 @@ class TestMidStr(MufProgramTestBase):
     def test_simple(self):
         self._test_program(b"""
 : main
-    "foobarbaz" 4 4 midstr "barb" strcmp not 
+    "foobarbaz" 4 4 midstr "barb" strcmp not
     "foobarbaz" 17 3 midstr "" strcmp not and
     "foobarbaz" 7 4 midstr "baz" strcmp not and
     "" 4 6 midstr "" strcmp not and
@@ -376,7 +376,7 @@ class TestStrCat(MufProgramTestBase):
     if me @ "Test passed." notify then
 ;
 """)
-    
+
     def test_overflow(self):
         self._test_program(b"""
 : main
@@ -403,7 +403,7 @@ lvar localVarNumberZero
     if me @ "Test passed." notify then
 ;
 """)
-    
+
 class TestExplode(MufProgramTestBase):
     def test_simple(self):
         self._test_program(b"""
@@ -463,7 +463,7 @@ class TestNotify(MufProgramTestBase):
 @program listener.muf
 i
 : main
-    dup "DoListener" strcmp not if 
+    dup "DoListener" strcmp not if
         me @ "_found_listen" 1 setprop
     then
     "Test passed." instring if me @ "FAILED." notify_nolisten then
@@ -489,9 +489,9 @@ q
 @program listener.muf
 i
 : main
-    dup "DoListener" strcmp not if 
+    dup "DoListener" strcmp not if
         me @ "_found_listen" 1 setprop
-        me @ "FAILED" notify_nolisten 
+        me @ "FAILED" notify_nolisten
     then
 ;
 .
@@ -515,11 +515,11 @@ class TestSubst(MufProgramTestBase):
         self._test_program(b"""
 : main
     "foobarbazbarbaz" "quux" "bar" subst
-    "fooquuxbazquuxbaz" strcmp not 
+    "fooquuxbazquuxbaz" strcmp not
     if me @ "Test passed." notify then
 ;
 """)
-    
+
     def test_overflow_one(self):
         self._test_program(b"""
 : main
@@ -603,7 +603,7 @@ class TestPronounSub(MufProgramTestBase):
     def test_simple(self):
         self._test_program(b"""
 : main
-    1 
+    1
     #1 "_genderthingy" "female" setprop
     #1 "%N" "the One" setprop
     #1 "%N:%n:%a:%A:%s:%S:%o:%O:%p:%P:%r:%R:" pronoun_sub
@@ -618,7 +618,7 @@ class TestPronounSub(MufProgramTestBase):
     def test_props(self):
         self._test_program(b"""
 : main
-    1 
+    1
     #0 "testObjectThingy" newobject
     dup "_genderthingy" "herm" setprop
     dup "%N" "testObjecty" setprop
@@ -640,7 +640,7 @@ class TestPronounSub(MufProgramTestBase):
         self._test_program(b"""
 : main
     #1 "_genderthingy" "female" setprop
-    1 
+    1
     #1 "%N" "alonglonglonglonglonglonglonglonglonglonglonglonglongstring" setprop
     0 "" begin
         "%N" strcat #1 over pronoun_sub strlen
@@ -656,10 +656,10 @@ class TestToUpper(MufProgramTestBase):
     def test_simple(self):
         self._test_program(b"""
 : main
-    1 
+    1
     "" toupper "" strcmp not and
     "foo" toupper "FOO" strcmp not and
-    "fOo123bar" toupper "FOO123BAR" strcmp not and 
+    "fOo123bar" toupper "FOO123BAR" strcmp not and
     if me @ "Test passed." notify then
 ;
 """)
@@ -668,10 +668,10 @@ class TestToLower(MufProgramTestBase):
     def test_simple(self):
         self._test_program(b"""
 : main
-    1 
+    1
     "" tolower "" strcmp not and
     "FOO" tolower "foo" strcmp not and
-    "FOo123BaR" tolower "foo123bar" strcmp not and 
+    "FOo123BaR" tolower "foo123bar" strcmp not and
     if me @ "Test passed." notify then
 ;
 """)
@@ -680,11 +680,11 @@ class TestUnparseObj(MufProgramTestBase):
     def test_simple(self):
         self._test_program(b"""
 : main
-    1 
+    1
     #1 unparseobj "One(#1PWM3)" strcmp not and
 
     #0 "Test Object" newobject
-    dup "V" set 
+    dup "V" set
     dup "Z" set
     unparseobj
     "Test Object(#4VZ)" strcmp not and
@@ -692,7 +692,7 @@ class TestUnparseObj(MufProgramTestBase):
     #-1 unparseobj "*NOTHING*" strcmp not and
 
     #400 unparseobj "*INVALID*" strcmp not and
-    
+
     #-4 unparseobj "*NIL*" strcmp not and
 
     #-3 unparseobj "*HOME*" strcmp not and
@@ -825,7 +825,7 @@ class TestTokenSplit(MufProgramTestBase):
     if me @ "Test passed." notify then
 ;
 """)
-    
+
     def test_empty(self):
         self._test_program(rb"""
 : main
@@ -875,19 +875,19 @@ class TestAnsiStrcut(MufProgramTestBase):
     "foobar" 7 ansi_strcut "" strcmp not swap "foobar" strcmp not and and
     "foobar" 0 ansi_strcut "foobar" strcmp not swap "" strcmp not and and
     "\[[0mfoo\[[3;03mbar\[[0m" 6 ansi_strcut
-        "\[[0m" strcmp not 
+        "\[[0m" strcmp not
         swap "\[[0mfoo\[[3;03mbar" strcmp not and and
     "\[[0mfoo\[[3;03mbar\[[0m" 7 ansi_strcut
-        "" strcmp not 
+        "" strcmp not
         swap "\[[0mfoo\[[3;03mbar\[[0m" strcmp not and and
     "\[[0mfoo\[[3;03mbar\[[0m" 2 ansi_strcut
-        "o\[[3;03mbar\[[0m" strcmp not 
+        "o\[[3;03mbar\[[0m" strcmp not
         swap "\[[0mfo" strcmp not and and
     "\[[0mfoo\[[3;03mbar\[[0m" 3 ansi_strcut
-        "\[[3;03mbar\[[0m" strcmp not 
+        "\[[3;03mbar\[[0m" strcmp not
         swap "\[[0mfoo" strcmp not and and
     "\[[0mfoo\[[3;03mbar\[[0m" 0 ansi_strcut
-        "\[[0mfoo\[[3;03mbar\[[0m" strcmp not 
+        "\[[0mfoo\[[3;03mbar\[[0m" strcmp not
         swap "" strcmp not  and and
     if me @ "Test passed." notify then
 ;
@@ -921,7 +921,7 @@ class TestAnsiMidStr(MufProgramTestBase):
     "foobar" 1 6 ansi_midstr "foobar" strcmp not and
     "foobar" 1 5 ansi_midstr "fooba" strcmp not and
     "\[[0mfoo\[[3;03mbar\[[0m" 1 6 ansi_midstr
-        "\[[0mfoo\[[3;03mbar" strcmp not and 
+        "\[[0mfoo\[[3;03mbar" strcmp not and
     "\[[0mfoo\[[3;03mbar\[[0m" 6 2 ansi_midstr
         "r\[[0m" strcmp not and
     "\[[0mfoo\[[3;03mbar\[[0m" 6 1 ansi_midstr
