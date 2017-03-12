@@ -494,6 +494,11 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
     stk_array *nu = NULL;
     const char *abort_message = NULL;
 
+    // cur_value is the current value from the array being placed in
+    // the output. This is a constant or pointer to an array element.
+    // It WILL NOT be cleared.
+    struct inst *cur_value = NULL;
+
     CHECKOP(2);
     oper2 = POP();
     oper1 = POP();
@@ -584,19 +589,19 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    scnt++;
 			    *fieldname++ = '\0';
 
-			    oper3 = array_getitem(arr, &temp1);
-			    arr2 = oper3->data.array;
-			    oper3 = NULL;
+			    cur_value = array_getitem(arr, &temp1);
+			    arr2 = cur_value->data.array;
+			    cur_value = NULL;
 			    if (number(fieldbuf)) {
 				temp2.type = PROG_INTEGER;
 				temp2.data.number = atoi(fieldbuf);
-				oper3 = array_getitem(arr2, &temp2);
+				cur_value = array_getitem(arr2, &temp2);
 			    }
-			    if (!oper3) {
+			    if (!cur_value) {
 				temp2.type = PROG_STRING;
 				temp2.data.string = alloc_prog_string(fieldbuf);
-				oper3 = array_getitem(arr2, &temp2);
-				CLEAR(&temp2);
+				cur_value = array_getitem(arr2, &temp2);
+                                CLEAR(&temp2);
 			    }
 			    if (!oper3) {
 				switch (sstr[scnt]) {
@@ -635,16 +640,15 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 				    break;
 				}
 			    }
-			    nargs = 2;
 			} else {
                             abort_message = "Specified format field didn't have an array index.";
                             goto cleanup_and_abort;
 			}
 
-			/* If s is the format and oper3 is really a string, repair the lengths to account for ansi codes. */
-			if (('s' == sstr[scnt]) && (PROG_STRING == oper3->type)
-			    && (oper3->data.string)) {
-			    ptr = oper3->data.string->data;
+			/* If s is the format and cur_value is really a string, repair the lengths to account for ansi codes. */
+			if (('s' == sstr[scnt]) && (PROG_STRING == cur_value->type)
+			    && (cur_value->data.string)) {
+			    ptr = cur_value->data.string->data;
 
 			    i = 0;
 			    while ((-1 == slen2 || i < slen2) && *ptr) {	/* adapted from prim_ansi_strlen */
@@ -695,7 +699,7 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    strcatn(sfmt, sizeof(sfmt), tbuf);
 			}
 			if (sstr[scnt] == '~') {
-			    switch (oper3->type) {
+			    switch (cur_value->type) {
 			    case PROG_OBJECT:
 				sstr[scnt] = 'D';
 				break;
@@ -720,11 +724,11 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			switch (sstr[scnt]) {
 			case 'i':
 			    strcatn(sfmt, sizeof(sfmt), "d");
-			    if (oper3->type != PROG_INTEGER) {
+			    if (cur_value->type != PROG_INTEGER) {
 				abort_message = "Format specified integer argument not found.";
                                 goto cleanup_and_abort;
                             }
-			    snprintf(tbuf, sizeof(tbuf), sfmt, oper3->data.number);
+			    snprintf(tbuf, sizeof(tbuf), sfmt, cur_value->data.number);
 			    tlen = strlen(tbuf);
 			    if (slrj == 2) {
 				tnum = 0;
@@ -749,11 +753,11 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			case 'S':
 			case 's':
 			    strcatn(sfmt, sizeof(sfmt), "s");
-			    if (oper3->type != PROG_STRING) {
+			    if (cur_value->type != PROG_STRING) {
 				abort_message = "Format specified string argument not found.";
                                 goto cleanup_and_abort;
                             }
-			    snprintf(tbuf, sizeof(tbuf), sfmt, DoNullInd(oper3->data.string));
+			    snprintf(tbuf, sizeof(tbuf), sfmt, DoNullInd(cur_value->data.string));
 			    tlen = strlen(tbuf);
 			    if (slrj == 2) {
 				tnum = 0;
@@ -777,7 +781,7 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    break;
 			case '?':
 			    strcatn(sfmt, sizeof(sfmt), "s");
-			    switch (oper3->type) {
+			    switch (cur_value->type) {
 			    case PROG_OBJECT:
 				strcpyn(hold, sizeof(hold), "OBJECT");
 				break;
@@ -850,15 +854,19 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    break;
 			case 'd':
 			    strcatn(sfmt, sizeof(sfmt), "s");
-			    if (oper3->type != PROG_OBJECT) {
+			    if (cur_value->type != PROG_OBJECT) {
 				abort_message = "Format specified object not found.";
                                 goto cleanup_and_abort;
                             }
+<<<<<<< b3846d18fa388a01e6f198a033e3bfb22a5dace3
 			    if (!valid_object(oper3) && oper3->data.objref != NOTHING) {
 				abort_message = "Format specified object not found.";
                                 goto cleanup_and_abort;
                             }
 			    snprintf(hold, sizeof(hold), "#%d", oper3->data.objref);
+=======
+			    snprintf(hold, sizeof(hold), "#%d", cur_value->data.objref);
+>>>>>>> Avoid CLEAR()ing values from arrays in array_fmtstrings.
 			    snprintf(tbuf, sizeof(tbuf), sfmt, hold);
 			    tlen = strlen(tbuf);
 			    if (slrj == 2) {
@@ -883,11 +891,19 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    break;
 			case 'D':
 			    strcatn(sfmt, sizeof(sfmt), "s");
-			    if (oper3->type != PROG_OBJECT) {
+			    if (cur_value->type != PROG_OBJECT) {
 				abort_message = "Format specified object not found.";
                                 goto cleanup_and_abort;
                             } 
+<<<<<<< b3846d18fa388a01e6f198a033e3bfb22a5dace3
 			    ref = oper3->data.objref;
+=======
+			    if (!valid_object(cur_value)) {
+				abort_message = "Format specified object not valid.";
+                                goto cleanup_and_abort;
+                            }
+			    ref = cur_value->data.objref;
+>>>>>>> Avoid CLEAR()ing values from arrays in array_fmtstrings.
 			    CHECKREMOTE(ref);
 			    if (ref != NOTHING && NAME(ref)) {
 				strcpyn(hold, sizeof(hold), NAME(ref));
@@ -918,12 +934,12 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    break;
 			case 'l':
 			    strcatn(sfmt, sizeof(sfmt), "s");
-			    if (oper3->type != PROG_LOCK) {
+			    if (cur_value->type != PROG_LOCK) {
 				abort_message = "Format specified lock not found.";
                                 goto cleanup_and_abort;
                             }
 			    strcpyn(hold, sizeof(hold),
-				    unparse_boolexp(ProgUID, oper3->data.lock, 1));
+				    unparse_boolexp(ProgUID, cur_value->data.lock, 1));
 			    snprintf(tbuf, sizeof(tbuf), sfmt, hold);
 			    tlen = strlen(tbuf);
 			    if (slrj == 2) {
@@ -952,11 +968,11 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 			    strcatn(sfmt, sizeof(sfmt), "l");
 			    snprintf(hold, sizeof(hold), "%c", sstr[scnt]);
 			    strcatn(sfmt, sizeof(sfmt), hold);
-			    if (oper3->type != PROG_FLOAT) {
+			    if (cur_value->type != PROG_FLOAT) {
 				abort_message = "Format specified float not found.";
                                 goto cleanup_and_abort;
                             }
-			    snprintf(tbuf, sizeof(tbuf), sfmt, oper3->data.fnumber);
+			    snprintf(tbuf, sizeof(tbuf), sfmt, cur_value->data.fnumber);
 			    tlen = strlen(tbuf);
 			    if (slrj == 2) {
 				tnum = 0;
