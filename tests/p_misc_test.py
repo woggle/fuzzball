@@ -365,8 +365,8 @@ class TestDateTimeUTC(MufProgramTestBase):
 class TestCanCall(MufProgramTestBase):
     def test_call_self(self):
         result = self._test_program(rb"""
-PUBLIC foo
 : foo ;
+PUBLIC foo
 : main
     1
     prog "foo" cancall? and
@@ -388,8 +388,8 @@ PUBLIC foo
 before=rb"""
 @program OtherProgram.muf
 1 i
-PUBLIC foo
 : foo ;
+PUBLIC foo
 : bar ;
 : main ;
 .
@@ -409,13 +409,14 @@ q
 before=rb"""
 @program OtherProgram.muf
 1 i
-PUBLIC foo
 : foo ;
+PUBLIC foo
 : bar ;
 : main ;
 .
 q
 @pcreate TestUser=foo
+@set TestUser=3
 @chown OtherProgram.muf=TestUser
 @set OtherProgram.muf=L
 """)
@@ -440,6 +441,7 @@ PUBLIC foo
 .
 q
 @pcreate TestUser=foo
+@set TestUser=3
 @chown OtherProgram.muf=TestUser
 """)
 if __name__ == '__main__':
