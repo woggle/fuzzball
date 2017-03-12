@@ -444,6 +444,8 @@ q
 @set TestUser=3
 @chown OtherProgram.muf=TestUser
 """)
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
