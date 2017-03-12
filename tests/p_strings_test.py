@@ -123,6 +123,12 @@ class TestFmtString(MufProgramTestBase):
 ;
 """)
     
+    def test_bad_arg(self):
+        self._test_program(rb"""
+: main
+    0 try { "FOO" "BAR" "BAZ" }list "%d" fmtstring catch pop me @ "Test passed." notify endcatch
+;
+""")
 
 class TestArrayFmtString(MufProgramTestBase):
     def test_simple(self):
@@ -495,6 +501,13 @@ q
 @propset me=dbref:_listen:listener.muf
 """)
         self.assertTrue(b"FAILED" not in result)
+
+    def test_bad_arg(self):
+        self._test_program(rb"""
+: main
+    0 try me @ { "FOO" "BAR" "BAZ" }list notify catch pop me @ "Test passed." notify endcatch
+;
+""")
 
 
 class TestSubst(MufProgramTestBase):
