@@ -1,7 +1,9 @@
 #!/usr/bin/env python3.6
 import asyncio
+import datetime
 import logging
 import re
+import time
 import unittest
 
 from fbmuck.server import Server, ServerTestBase, MufProgramTestBase, CONNECT_GOD
@@ -21,12 +23,12 @@ class TestQueue(MufProgramTestBase):
         #-1 loc !
         0 prog "FromQueue" queue
         dup 0 = if "no PID" abort then
-        begin 
-            0 sleep 
+        begin
+            0 sleep
             prog "_finished" getprop 1 = not while
-        repeat 
+        repeat
     then
-    
+
 ;
 """)
 
@@ -41,16 +43,15 @@ class TestKill(MufProgramTestBase):
     else
         #-1 loc !
         preempt
-        0 prog "FromQueue" queue 
-        dup kill 1 =  
+        0 prog "FromQueue" queue
+        dup kill 1 =
         swap kill 0 =
         and
         foreground
         0 sleep
-        prog "_started" getprop 0 = 
+        prog "_started" getprop 0 =
         and if me @ "Test passed." notify then
     then
-    
 ;
 """)
         self.assertTrue(b'\nFAILED' not in result)
@@ -127,7 +128,7 @@ class TestForce(MufProgramTestBase):
         "arg" strcmp not
         command @ "testcmd" strcmp not and
         force_level 0 > and
-        forcedby prog = and 
+        forcedby prog = and
         if #1 "Test passed." notify then
     else
         "Foo" "pass" newplayer
@@ -149,7 +150,7 @@ class TestForce(MufProgramTestBase):
             "second" strcmp not
             command @ "testcmd" strcmp not and
             force_level 1 > and
-            forcedby prog = and 
+            forcedby prog = and
             forcedby_array { prog prog }list array_compare 0 = and
             if #1 "Test passed." notify then
         then
@@ -167,7 +168,7 @@ class TestForce(MufProgramTestBase):
         result = self._test_program(rb"""
 : main
     me @ name "Foo" strcmp not if
-        0 try 
+        0 try
             me @ "testcmd" force
         catch
             "call loops" instring if #1 "Test passed." notify then
@@ -188,45 +189,29 @@ class TestSysparm(MufProgramTestBase):
         'cpennies': 'YYY',
     }
 
-    def test_read_param_simple_array(self):
+    def test_read_param_simple_array_foreach(self):
         self._test_program(rb"""
 : main
-    "pennies" sysparm_array foreach swap pop
+    "*" sysparm_array foreach swap pop
         dup "name" [] "pennies" strcmp not if
-            "value" [] "XXX" strcmp not and
+            "value" [] "XXX" strcmp not
             if me @ "Test passed." notify then
-        then
+        else pop then
     repeat
 ;
 """)
 
-    def test_read_param_simple_array_noforeach(self):
+    def test_read_param_simple_array_single(self):
         self._test_program(rb"""
 : main
     "pennies" sysparm_array 0 []
         dup "name" [] "pennies" strcmp not if
-            "value" [] "XXX" strcmp not and
+            "value" [] "XXX" strcmp not
             if me @ "Test passed." notify then
         then
 ;
 """)
 
-    def test_read_param_simple_array_noread(self):
-        self._test_program(rb"""
-: main
-    "pennies" sysparm_array 0 []
-    if me @ "Test passed." notify then
-;
-""")
-
-    def test_read_param_simple_array_reallynoread(self):
-        self._test_program(rb"""
-: main
-    "pennies" sysparm_array
-    if me @ "Test passed." notify then
-;
-""")
-    
     def test_read_param_simple(self):
         self._test_program(rb"""
 : main
@@ -238,7 +223,7 @@ class TestSysparm(MufProgramTestBase):
     def test_set_param_simple(self):
         self._test_program(rb"""
 : main
-    "pennies" "ZZZ" setsysparm 
+    "pennies" "ZZZ" setsysparm
     "pennies" sysparm "ZZZ" strcmp not
     if me @ "Test passed." notify then
 ;
@@ -246,6 +231,217 @@ class TestSysparm(MufProgramTestBase):
 @set test.muf=W
 """)
 
+class TestDateTimeUTC(MufProgramTestBase):
+    timezone = 'UTC'
+    def test_time_okay(self):
+        result =  self._test_program(rb"""
+: main
+    me @ time "T=%02i:%02i:%02i" fmtstring notify
+;
+""", pass_check=False)
+        m = re.search(rb'\nT=(?P<h>\d+):(?P<m>\d+):(?P<s>\d+)', result)
+        self.assertTrue(m)
+        values = m.group()
+        found_time = datetime.time(
+            hour=int(m.group('h')),
+            minute=int(m.group('m')),
+            second=int(m.group('s')),
+        )
+        now_datetime = datetime.datetime.utcnow()
+        now_date = datetime.date.today()
+        found_dt_guess = datetime.datetime.combine(now_date, found_time)
+        possible_dts = [
+            found_dt_guess,
+            found_dt_guess - datetime.timedelta(days=1),
+            found_dt_guess + datetime.timedelta(days=1)
+        ]
+        offsets = list(map(lambda t: abs((t - now_datetime).total_seconds()), possible_dts))
+        self.assertTrue(min(offsets) < 10.0)
+
+    def test_date_okay(self):
+        result =  self._test_program(rb"""
+: main
+    me @ date "D=%02i/%02i/%02i" fmtstring notify
+;
+""", pass_check=False)
+        m = re.search(rb'\nD=(?P<y>\d+)/(?P<m>\d+)/(?P<d>\d+)', result)
+        self.assertTrue(m)
+        values = m.group()
+        found_date = datetime.date(
+            year=int(m.group('y')),
+            month=int(m.group('m')),
+            day=int(m.group('d')),
+        )
+        now_date = datetime.date.today()
+        delta = abs(now_date.toordinal() - found_date.toordinal())
+        self.assertTrue(delta <= 1)
+
+    def test_gmtoffset(self):
+        self._test_program(rb"""
+: main
+    gmtoffset 0 = if me @ "Test passed." notify then
+;
+""")
+
+    def test_systime(self):
+        result =  self._test_program(rb"""
+: main
+    me @ systime "T=%02i" fmtstring notify
+;
+""", pass_check=False)
+        m = re.search(rb'\nT=(?P<t>\d+)', result)
+        self.assertTrue(m)
+        raw_time = int(m.group('t'))
+        self.assertTrue( abs(raw_time - time.time()) < 10.0 )
+
+    def test_systime_precise(self):
+        result =  self._test_program(rb"""
+: main
+    me @ systime_precise "T=%.2f" fmtstring notify
+;
+""", pass_check=False)
+        m = re.search(rb'\nT=(?P<t>[\d.]+)', result)
+        self.assertTrue(m)
+        raw_time = float(m.group('t'))
+        self.assertTrue( abs(raw_time - time.time()) < 10.0 )
+
+
+    def test_timesplit_simple(self):
+        result = self._test_program(rb"""
+: main
+    1
+    0 timesplit 8 array_make
+    { 0 0 0 1 1 1970 5 1 }list array_compare 0 = and
+    2000000000 timesplit 8 array_make
+    { 20 33 3 18 5 2033 4 138 }list array_compare 0 = and
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_timefmt_simple(self):
+        result = self._test_program(rb"""
+: main
+    1
+    2000000000
+    "%a/%A/%b/%B/%d/%e/%H/%I/%M/%S/%p/%Y/%l/%k" swap timefmt
+    "Wed/Wednesday/May/May/18/18/03/03/33/20/AM/2033/ 3/ 3" strcmp not and
+    10000000
+    "%a/%A/%b/%B/%d/%e/%H/%I/%M/%S/%p/%Y/%l/%k" swap timefmt
+    "Sun/Sunday/Apr/April/26/26/17/05/46/40/PM/1970/ 5/17" strcmp not and
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_create_timestamp(self):
+        result = self._test_program(rb"""
+: main
+    systime var start_time start_time !
+    #0 "TestObject" newobject timestamps
+    systime var done_time done_time !
+    pop (use count)
+    pop (last used)
+    pop (modified)
+    dup start_time @ >= swap done_time @ <= and if
+        me @ "Test passed." notify
+    then
+;
+""")
+
+    def test_modify_timestamp(self):
+        result = self._test_program(rb"""
+: main
+    systime var start_time start_time !
+    #0 "_testprop" 1 setprop #0 timestamps
+    systime var done_time done_time !
+    pop (use count)
+    pop (last used)
+    swap pop (create)
+    dup start_time @ >= swap done_time @ <= and if
+        me @ "Test passed." notify
+    then
+;
+""")
+
+class TestCanCall(MufProgramTestBase):
+    def test_call_self(self):
+        result = self._test_program(rb"""
+PUBLIC foo
+: foo ;
+: main
+    1
+    prog "foo" cancall? and
+    prog "bar" cancall? not and
+    if me @ "Test passed." notify then
+;
+""")
+    
+    def test_call_other_owned_uncompiled(self):
+        result = self._test_program(rb"""
+: main
+    "OtherProgram.muf" match 
+    1 
+    over "foo" cancall? and
+    over "bar" cancall? not and
+    if me @ "Test passed." notify then
+;
+""",
+before=rb"""
+@program OtherProgram.muf
+1 i
+PUBLIC foo
+: foo ;
+: bar ;
+: main ;
+.
+q
+""")
+
+    def test_call_other_linkable_uncompiled(self):
+        result = self._test_program(rb"""
+: main
+    "OtherProgram.muf" match 
+    1 
+    over "foo" cancall? and
+    over "bar" cancall? not and
+    if me @ "Test passed." notify then
+;
+""",
+before=rb"""
+@program OtherProgram.muf
+1 i
+PUBLIC foo
+: foo ;
+: bar ;
+: main ;
+.
+q
+@pcreate TestUser=foo
+@chown OtherProgram.muf=TestUser
+@set OtherProgram.muf=L
+""")
+
+    def test_call_other_unlinkable_uncompiled(self):
+        result = self._test_program(rb"""
+: main
+    "OtherProgram.muf" match 
+    1 
+    over "foo" cancall? not and
+    over "bar" cancall? not and
+    if me @ "Test passed." notify then
+;
+""",
+before=rb"""
+@program OtherProgram.muf
+1 i
+PUBLIC foo
+: foo ;
+: bar ;
+: main ;
+.
+q
+@pcreate TestUser=foo
+@chown OtherProgram.muf=TestUser
+""")
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     unittest.main()
