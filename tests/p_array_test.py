@@ -27,6 +27,13 @@ class TestArrayFlat(MufProgramTestBase):
 ;
 """)
 
+    def test_array_make_underflow(self):
+        self._test_program(rb"""
+: main
+    0 try 1000 array_make catch "underflow" instring if me @ "Test passed." notify then endcatch
+;
+""")
+
     def test_getrange(self):
         self._test_program(b"""
 : main
@@ -348,6 +355,43 @@ runtest
     then
 ;
 """)
+
+    def test_array_itersection_2(self):
+        self._test_program(b"""
+: main
+    { 1 2 3 "test" "test2" #1 #2 }list
+    { 1 2 3 "test" "test2" #2 }list
+    { 2 3 #2 "other" "test2" }list
+    3 array_nintersect
+    0 array_sort
+    { 2 3 "test2" #2 }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+   
+    def test_array_intersection_nested(self):
+        self._test_program(b"""
+: main
+    { 1 2 3 "test" "test2" #1 #2 { 42 }list { 43 45 }list }list
+    { 1 2 3 "test" "test2" #2 { 42 }list { 43 45 }list }list
+    { 2 3 #2 "other" "test2" { 43 45 }list }list
+    3 array_nintersect
+    0 array_sort
+    { 2 3 "test2" #2 { 43 45 }list }list
+    0 array_sort
+    array_compare 0 = if
+      me @ "Test passed." notify
+    else
+      me @ "Test failed." notify
+    then
+;
+""")
+
 
     def test_array_difference(self):
         self._test_program(b"""
