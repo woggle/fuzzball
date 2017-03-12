@@ -18,7 +18,7 @@ class TestStack(MufProgramTestBase):
     then
 ;
 """)
-    
+
     def test_popn(self):
         self._test_program(b"""
 : main
@@ -26,14 +26,14 @@ class TestStack(MufProgramTestBase):
     "c" strcmp not
     swap "b" strcmp not and
     swap "a" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
     then
 ;
 """)
-    
+
     def test_popn_badarg(self):
         self._test_program(b"""
 : main
@@ -54,7 +54,7 @@ class TestStack(MufProgramTestBase):
     swap "c" strcmp not and
     swap "b" strcmp not and
     swap "a" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -66,7 +66,7 @@ class TestStack(MufProgramTestBase):
         self._test_program(b"""
 : main
     "a" "b" "c" "d" "e" "f" 3 ldup
-    3 = 
+    3 =
     swap "f" strcmp not and
     swap "e" strcmp not and
     swap "d" strcmp not and
@@ -77,7 +77,7 @@ class TestStack(MufProgramTestBase):
     swap "c" strcmp not and
     swap "b" strcmp not and
     swap "a" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -91,7 +91,7 @@ class TestStack(MufProgramTestBase):
     "a" "b" "c" nip
     "c" strcmp not
     swap "a" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -107,7 +107,7 @@ class TestStack(MufProgramTestBase):
     swap "b" strcmp not and
     swap "c" strcmp not and
     swap "a" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -119,10 +119,10 @@ class TestStack(MufProgramTestBase):
         self._test_program(b"""
 : main
     "a" "b" "c" "x" 2 put
-    "c" strcmp not 
+    "c" strcmp not
     swap "x" strcmp not and
     swap "a" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -135,7 +135,7 @@ class TestStack(MufProgramTestBase):
 : main
     "a" "b" "c" ":" ":" ":" 4 pick
     "c" strcmp not
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -147,11 +147,11 @@ class TestStack(MufProgramTestBase):
         self._test_program(b"""
 : main
     ":" "a" "b" "c" rot
-    "a" strcmp not 
+    "a" strcmp not
     swap "c" strcmp not and
     swap "b" strcmp not and
     swap ":" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
@@ -163,18 +163,18 @@ class TestStack(MufProgramTestBase):
         self._test_program(b"""
 : main
     ":" "a" "b" "c" -rot
-    "b" strcmp not 
+    "b" strcmp not
     swap "a" strcmp not and
     swap "c" strcmp not and
     swap ":" strcmp not and
-    if 
+    if
         me @ "Test passed." notify
     else
         me @ "Test failed." notify
     then
 ;
 """)
-    
+
     def test_rotate(self):
         self._test_program(b"""
 : main
