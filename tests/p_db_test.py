@@ -6,6 +6,37 @@ import unittest
 
 from fbmuck.server import Server, ServerTestBase, MufProgramTestBase
 
+class TestCopyObj(MufProgramTestBase):
+    def test_copyobj(self):
+        result = self._test_program(rb"""
+: main
+    "Foo" match copyobj var! obj
+    1
+    obj @ name "Foo" strcmp not and
+    obj @ location me @ = and
+    obj @ "_proplist/a" getprop "foo" strcmp not and
+    obj @ "_proplist/b" getprop "bar" strcmp not and
+    obj @ "_lockprop" getprop unparselock "me" parselock unparselock strcmp not and
+    obj @ "~protectedprop" getprop #0 = and
+    if me @ "Test passed." notify then
+    obj @ "NewFoo" setname
+;
+""",before=rb"""
+@create Foo
+@desc Foo={null:to preserve}
+@set Foo=@secretprop:42
+@propset Foo=dbref:~protectedprop:#0
+@propset Foo=lock:_lockprop:me
+@set Foo=_proplist/a:foo
+@set Foo=_proplist/b:bar
+drop Foo
+""", after=rb"""
+ex NewFoo=/
+""")
+        self.assertTrue(rb'str /@secretprop' in result)
+
+
+
 class TestManipObject(MufProgramTestBase):
     def test_create(self):
         result = self._test_program(b"""
@@ -136,6 +167,101 @@ class TestManipObject(MufProgramTestBase):
     obj @ recycle
     obj @ ok? not and
     obj @ thing? not and
+    if me @ "Test passed." notify then
+;
+""")
+
+class TestMatch(MufProgramTestBase):
+    def test_exits_attachments(self):
+        self._test_program(rb"""
+: main
+    #0 "TestRoom" newroom var! testRoom
+    me @ testRoom @ moveto
+    #0 "alpha;bravo;charlie" newexit var! zeroExit
+    1 
+    "alpha" match zeroExit @ = and
+    "bravo" match zeroExit @ = and
+    "charlie" match zeroExit @ = and
+    "delta" match #-1 = and
+    testRoom @ "bravo;charlie;delta;echo" newexit var! roomExit
+    "alpha" match zeroExit @ = and
+    "bravo" match roomExit @ = and
+    "charlie" match roomExit @ = and
+    "delta" match roomExit @ = and
+    "echo" match roomExit @ = and
+    me @ "alpha;charlie;echo;foxtrot;golf" newexit var! meExit
+    "alpha" match meExit @ = and
+    "bravo" match roomExit @ = and
+    "charlie" match roomExit @ = and
+    "delta" match roomExit @ = and
+    "echo" match roomExit @ = and
+    "foxtrot" match meExit @ = and
+    "golf" match meExit @ = and
+    testRoom @ "SomeObject" newobject var! testObj
+    testObj @ "alpha;bravo;echo;foxtrot" newexit var! testObjExit
+    "alpha" match testObjExit @ = and
+    "bravo" match roomExit @ = and
+    "charlie" match roomExit @ = and
+    "delta" match roomExit @ = and
+    "echo" match roomExit @ = and
+    "foxtrot" match testObjExit @ = and
+    "golf" match meExit @ = and
+    me @ "SomeObjectTwo" newobject var! testInvObj
+    testInvObj @ "alpha;bravo;echo;foxtrot;golf" newexit var! testInvObjExit
+    "alpha" match testInvObjExit @ = and
+    "bravo" match roomExit @ = and
+    "charlie" match roomExit @ = and
+    "delta" match roomExit @ = and
+    "echo" match roomExit @ = and
+    "foxtrot" match testInvObjExit @ = and
+    "golf" match testInvObjExit @ = and
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_things_priority(self):
+        self._test_program(rb"""
+: main
+    #0 "TestRoom" newroom var! testRoom
+    me @ testRoom @ moveto
+    testRoom @ "TestObject" newobject var! roomObj
+    1 
+    "TestObject" match roomObj @ = and
+    me @ "TestObject" newobject var! meObj
+    "TestObj" match #-2 = and
+    meObj @ "TestObject Longer" setname
+    "TestObject" match roomObj @ = and
+    "TestObject L" match meObj @ = and
+    meObj @ "TestObject" setname
+    roomObj @ "TestObject Longer" setname
+    "TestObject" match meObj @ = and
+    "TestObj" match #-2 = and
+    "TestObject L" match roomObj @ = and
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_multiple_exact_is_random(self):
+        self._test_program(rb"""
+: main
+    #0 "TestRoom" newroom var! testRoom
+    me @ testRoom @ moveto
+    testRoom @ "TestObject" newobject var! roomObj
+    me @ "TestObject" newobject var! meObj
+    0 var! count
+    1
+    begin
+        "TestObject" match dup var! lastMatch roomObj @ = not while
+        meObj @ = not if me @ "Test failed." exit then
+        count @ 1 + dup count ! 100000 < while
+    repeat
+    lastMatch @ roomObj @ = and
+    begin
+        "TestObject" match dup lastMatch ! meObj @ = not while
+        roomObj @ = not if me @ "Test failed." exit then
+        count @ 1 + dup count ! 100000 < while
+    repeat
+    lastMatch @ meObj @ = and
     if me @ "Test passed." notify then
 ;
 """)
