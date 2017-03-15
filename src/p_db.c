@@ -1744,21 +1744,6 @@ prim_copyplayer(PRIM_PROTOTYPE)
     FLAGS(newplayer) = FLAGS(ref);
 
     copy_properties_onto(ref, newplayer);
-<<<<<<< 626f925e05c6f95258f47166a54c03b99452728b
-=======
-    newp = DBFETCH(newplayer);
-    newp->exits = NOTHING;
-    newp->contents = NOTHING;
-    newp->next = NOTHING;
-#ifdef DISKBASE
-    newp->propsfpos = 0;
-    newp->propsmode = PROPS_UNLOADED;
-    newp->propstime = 0;
-    newp->nextold = NOTHING;
-    newp->prevold = NOTHING;
-    dirtyprops(newplayer);
-#endif
->>>>>>> Don't leak memory by replacing system properties in COPYPLAYER.
 
     PLAYER_SET_HOME(newplayer, PLAYER_HOME(ref));
     SETVALUE(newplayer, GETVALUE(newplayer) + GETVALUE(ref));
