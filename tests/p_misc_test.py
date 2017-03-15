@@ -32,6 +32,98 @@ class TestQueue(MufProgramTestBase):
 ;
 """)
 
+class TestInterp(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    "FromInterp" strcmp not if
+        trigger @ name "TriggerObject" strcmp not 
+        trigger @ trig = and if
+            prog "_finished" 1 setprop
+        then
+        "InterpResult"
+    else
+        #0 "TriggerObject" newobject var! totrig
+        1
+        prog totrig @ "FromInterp" interp "InterpResult" strcmp not and
+        prog "_finished" getprop and
+        if
+            me @ "Test passed." notify
+        then
+    then
+;
+""")
+
+    def test_abort(self):
+        self._test_program(rb"""
+: main
+    "FromInterp" strcmp not if
+        "Aborting" abort "NotPassing"
+    else
+        prog #1 "FromInterp" interp
+        not if me @ "Test passed." notify then
+    then
+;
+""")
+        
+    def test_loop(self):
+        self._test_program(rb"""
+: main
+    0 try prog #1 "FromInterp" interp catch
+        "loop" instring if me @ "Test passed." notify then
+    endcatch
+;
+""")
+
+class TestFor(MufProgramTestBase):
+    def test_simple(self):
+        self._test_program(rb"""
+: main
+    { }list
+    4 10 2 for
+       swap array_appenditem 
+    repeat
+    { 4 6 8 10 }list array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_simple_negative(self):
+        self._test_program(rb"""
+: main
+    { }list
+    10 4 -2 for
+       swap array_appenditem 
+    repeat
+    { 10 8 6 4 }list array_compare 0 =
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_simple_empty(self):
+        self._test_program(rb"""
+: main
+    1
+
+    { }list
+    10 4 2 for
+       swap array_appenditem 
+    repeat
+    { }list array_compare 0 = and
+
+
+    { }list
+    4 10 -2 for
+       swap array_appenditem 
+    repeat
+    { }list array_compare 0 = and
+
+    if me @ "Test passed." notify then
+;
+""")
+
+
+
 class TestKill(MufProgramTestBase):
     def test_simple(self):
         result = self._test_program(rb"""

@@ -190,6 +190,23 @@ class TestStack(MufProgramTestBase):
     then
 ;
 """)
+
+    def test_rotate4(self):
+        self._test_program(b"""
+: main
+    ":" "a" "b" "c" "d" 4 rotate
+    "a" strcmp not 
+    swap "d" strcmp not and
+    swap "c" strcmp not and
+    swap "b" strcmp not and
+    swap ":" strcmp not and
+    if 
+        me @ "Test passed." notify
+    else
+        me @ "Test failed." notify
+    then
+;
+""")
     
     def test_rotate_badarg(self):
         self._test_program(b"""
@@ -234,7 +251,23 @@ class TestStack(MufProgramTestBase):
         self._test_program(b"""
 : main
     ":" "a" "b" "c" 3 reverse
-    3 =
+    "a" strcmp not 
+    swap "b" strcmp not and
+    swap "c" strcmp not and
+    swap ":" strcmp not and
+    if 
+        me @ "Test passed." notify
+    else
+        me @ "Test failed." notify
+    then
+;
+""")
+    
+    def test_lreverse(self):
+        self._test_program(b"""
+: main
+    ":" "a" "b" "c" 3 lreverse
+    3 = 
     swap "a" strcmp not and
     swap "b" strcmp not and
     swap "c" strcmp not and
@@ -247,19 +280,17 @@ class TestStack(MufProgramTestBase):
 ;
 """)
 
-    def test_reverse(self):
+    def test_secure_sysvars(self):
         self._test_program(b"""
 : main
-    ":" "a" "b" "c" 3 reverse
-    "a" strcmp not 
-    swap "b" strcmp not and
-    swap "c" strcmp not and
-    swap ":" strcmp not and
-    if 
-        me @ "Test passed." notify
-    else
-        me @ "Test failed." notify
-    then
+    "foo" me ! "bar" loc ! "quux" trigger ! "other" command !
+    secure_sysvars
+    1
+    "me" match me @ = and
+    me @ location loc @ = and
+    trig trigger @ = and
+    command @ "other" strcmp and
+    if me @ "Test passed." notify then
 ;
 """)
 

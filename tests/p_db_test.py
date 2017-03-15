@@ -611,7 +611,7 @@ q
         self._test_program(rb"""
 : main
     1
-    getpids { pid }list array_compare 0 = and
+    prog getpids { pid }list array_compare 0 = and
     if me @ "Test passed." notify then
 ;
 """)
