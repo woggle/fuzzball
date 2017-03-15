@@ -366,7 +366,7 @@ class ServerTestBase(unittest.TestCase):
         self.server.cleanup()
 
 class MufProgramTestBase(ServerTestBase):
-    def _test_program(self, program, before=b"", after=b"", pass_check=True):
+    def _test_program(self, program, before=b"", after=b"", pass_check=True, timeout=10):
         result = self._do_full_session(CONNECT_GOD +
 b"""
 @program test.muf
@@ -381,7 +381,7 @@ q
 """ + before + b"""
 runtest
 """ + after + b"""
-""")
+""", timeout=timeout)
         if pass_check:
             self.assertTrue(b'\nTest passed.' in result)
         return result
