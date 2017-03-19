@@ -23,6 +23,7 @@ connect TestUser foo
 
 class TestToadNoRecycle(ServerTestBase):
     extra_params = { 'toad_recycle': 'no' }
+
     def test_toad_simple(self):
         result = self._do_full_session(CONNECT_GOD +
 b"""

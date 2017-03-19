@@ -20,6 +20,15 @@ TEST_PORT = 35434
 TEST_SSL_PORT = 35435
 
 CONNECT_GOD = b"connect One potrzebie\n"
+CONNECT_CREATE_TEST_USER = CONNECT_GOD + rb"""
+@pcreate TestUser=testpassword
+"""
+CONNECT_TEST_USER = rb"""
+connect TestUser testpassword
+"""
+BOOT_TEST_USER = rb"""
+@boot TestUser
+"""
 
 cached_server_options = None
 @asyncio.coroutine
@@ -356,6 +365,29 @@ class ServerTestBase(unittest.TestCase):
             return self._do_full_session(prefix + input_setup + b'\n' + input_test, 
                 autoquit=autoquit, add_crlf=add_crlf, timeout=timeout)
 
+    def _second_user_test(self, main_input, autoquit=True, timeout=5,
+                          setup=CONNECT_CREATE_TEST_USER, setup_connect=CONNECT_TEST_USER):
+        def _start_session(reader, writer, the_input):
+            logging.error('start')
+            writer.write(the_input + b"\r\npose ENDOFSETUPMARKERENDOFSETUPMARKER\r\n")
+            asyncio.ensure_future(writer.drain())
+            while True:
+                line = yield from reader.readline()
+                logging.error('read <%s>', line)
+                if rb'ENDOFSETUPMARKERENDOFSETUPMARKER' in line:
+                    break
+            return (reader, writer)
+        start_future = asyncio.ensure_future(self._run_with_reader_writer(lambda r, w: _start_session(r, w, setup)))
+        (one_reader, one_writer) = asyncio.get_event_loop().run_until_complete(start_future)
+        user_future = asyncio.ensure_future(self._run_with_reader_writer(lambda r, w: _start_session(r, w, setup_connect)))
+        (user_reader, user_writer) = asyncio.get_event_loop().run_until_complete(user_future)
+        one_future = asyncio.ensure_future(send_and_quit_wait(one_reader, one_writer, main_input))
+        user_future = asyncio.ensure_future(user_reader.read())
+        main_result = asyncio.get_event_loop().run_until_complete(one_future)
+        user_result = asyncio.get_event_loop().run_until_complete(user_future)
+        return (main_result, user_result)
+
+    
     def tearDown(self):
         try:
             asyncio.get_event_loop().run_until_complete(self.server.stop())

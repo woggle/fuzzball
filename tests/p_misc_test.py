@@ -537,6 +537,43 @@ q
 @chown OtherProgram.muf=TestUser
 """)
 
+class TestIgnoreList(MufProgramTestBase):
+    extra_params = {'ignore_support': 'yes', 'ignore_bidirectional': 'yes'}
+    def test_simple_addgetdel(self):
+        self._test_program(rb"""
+: main
+    1
+
+    ( don't test with #1 since they can't quell themselves )
+    "TestPlayerZero" pmatch var! testPlayerZero 
+    "TestPlayerOne" pmatch var! testPlayerOne
+    "TestPlayerTwo" pmatch var! testPlayerTwo
+
+    testPlayerZero @ testPlayerOne @ ignore_add
+    testPlayerZero @ testPlayerTwo @ ignore_add
+    testPlayerZero @ array_get_ignorelist
+    { testPlayerOne @ testPlayerTwo @ }list
+    array_compare 0 = and
+
+    testPlayerZero @ testPlayerOne @ ignore_del
+    testPlayerZero @ array_get_ignorelist
+    { testPlayerTwo @ }list
+    array_compare 0 = and
+
+    testPlayerZero @ testPlayerOne @ ignoring? not and
+    testPlayerOne @ testPlayerZero @ ignoring? not and
+    testPlayerZero @ testPlayerTwo @ ignoring? and
+    testPlayerTwo @ testPlayerZero @ ignoring? and
+    
+    if me @ "Test passed." notify then
+;
+""", before=rb"""
+@pcreate TestPlayerZero=foo
+@pcreate TestPlayerOne=foo
+@pcreate TestPlayerTwo=foo
+@pcreate TestPlayerThree=foo
+""")
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
