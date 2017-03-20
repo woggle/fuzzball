@@ -4,7 +4,7 @@ import logging
 import re
 import unittest
 
-from fbmuck.server import Server, ServerTestBase
+from fbmuck.server import Server, ServerTestBase, MPITestBase
 
 CONNECT = b"connect One potrzebie\n"
 
@@ -86,3 +86,38 @@ foo
         logging.error("result1 = %s", result1);
         self.assertTrue(b'Foo failure.' in result1)
 
+
+class TestMPIFunc(MPITestBase):
+    def test_threearg(self):
+        self._test_mpi(rb"{func:foo,va,vb,vc,func({&va}:{&vb}:{&vc})}"
+                      +rb"{if:{eq:{foo:x,y,z},func(x:y:z)},Test passed.}")
+
+class TestMPIProp(MPITestBase):
+    def test_direct(self):
+        self._test_mpi(rb"{if:{eq:{prop:_testprop},testvalue},Test passed.}",
+            before=rb"""
+@set runtest=_testprop:testvalue
+""")
+    
+    def test_direct_exact(self):
+        self._test_mpi(rb"{if:{eq:{prop!:_testprop},testvalue},Test passed.}",
+            before=rb"""
+@set runtest=_testprop:testvalue
+""")
+
+    def test_env(self):
+        self._test_mpi(rb"{if:{eq:{prop:_testprop},testvalue},Test passed.}",
+            before=rb"""
+@set #0=_testprop:testvalue
+""")
+
+    def test_noenv(self):
+        self._test_mpi(rb"{if:{ne:{prop!:_testprop},testvalue},Test passed.}",
+            before=rb"""
+@set #0=_testprop:testvalue
+""")
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    unittest.main()

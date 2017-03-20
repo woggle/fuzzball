@@ -161,7 +161,7 @@ class TestEnvProp(MufProgramTestBase):
     me @ thirdEnv @ moveto
 """
     def test_direct(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     me @ "_testprop" "onMe" setprop
     thirdEnv @ "_testprop" "onThird" setprop
     me @ "_testprop" envprop "onMe" strcmp not swap #1 = and and
@@ -172,7 +172,7 @@ class TestEnvProp(MufProgramTestBase):
 """)
 
     def test_root(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     me @ "_testprop" envprop "onZero" strcmp not swap #0 = and and
     me @ "_testprop" envpropstr "onZero" strcmp not swap #0 = and and
@@ -182,7 +182,7 @@ class TestEnvProp(MufProgramTestBase):
 """)
 
     def test_middle(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     secondEnv @ "_testprop" "onSecond" setprop
     me @ "_testprop" envprop "onSecond" strcmp not swap secondEnv @ = and and
@@ -192,7 +192,7 @@ class TestEnvProp(MufProgramTestBase):
 """)
 
     def test_lock(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     secondEnv @ "_testprop" "me" parselock setprop
     me @ "_testprop" envprop unparselock "me" parselock unparselock strcmp not
@@ -205,7 +205,7 @@ class TestEnvProp(MufProgramTestBase):
 """)
 
     def test_dbref(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     secondEnv @ "_testprop" #42 setprop
     me @ "_testprop" envprop #42 = 
@@ -218,29 +218,29 @@ class TestEnvProp(MufProgramTestBase):
 """)
     
     def test_end(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     secondEnv @ "_testprop" "onSecond" setprop
     thirdEnv @ "_testprop" "onThird" setprop
-    me @ "_testprop" envprop "onThird" strcmp not swap thirdEnv@ = and and
+    me @ "_testprop" envprop "onThird" strcmp not swap thirdEnv @ = and and
 
     if me @ "Test passed." notify then
 ;
 """)
 
     def test_thing_in_player(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     me @ "_testprop" "onMe" setprop
     theThing @ "_testprop" envprop "onMe" strcmp not swap me @ = and and
-    theThing @ "_testprop" envpropstr "one me" strcmp not swap me @ = and and
+    theThing @ "_testprop" envpropstr "onMe" strcmp not swap me @ = and and
 
     if me @ "Test passed." notify then
 ;
 """)
 
     def test_thing_in_player_room(self):
-        result = self._test_program(SETUP + rb"""
+        result = self._test_program(self.SETUP + rb"""
     #0 "_testprop" "onZero" setprop
     thirdEnv @ "_testprop" "onThird" setprop
     theThing @ "_testprop" envprop "onThird" strcmp not swap thirdEnv @ = and and

@@ -574,6 +574,156 @@ class TestIgnoreList(MufProgramTestBase):
 @pcreate TestPlayerThree=foo
 """)
 
+class TestEvent(MufProgramTestBase):
+    def test_immediate_timers(self):
+        self._test_program(rb"""
+: main
+    1
+
+    0 "foobar" timer_start
+    0 "wait" timer_start
+    { "TIMER.wait" }list event_waitfor swap pop
+    "TIMER.wait" strcmp not and 
+
+    "TIMER.foobar" event_exists and
+    "TIMER.f*bar" event_exists and
+    "TIMER.wait" event_exists not and
+    "READ" event_exists and
+    event_count 2 = and
+
+    { "TIMER.foobar" }list event_waitfor
+    "TIMER.foobar" strcmp not
+    swap systime - abs 1 <= and and
+
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_send_self(self):
+        self._test_program(rb"""
+: main
+    1
+
+    pid "foo" { "alpha" "beta" "gamma" "delta" }dict event_send
+    "USER.foo" event_exists and
+    { "USER.foo" }list event_waitfor
+    "USER.foo" strcmp not swap
+    {
+        "caller_pid" pid
+        "caller_prog" prog
+        "data" { "alpha" "beta" "gamma" "delta" }dict 
+        "descr" descr
+        "trigger" trig
+        "player" me @
+        "prog_uid" me @
+    }dict array_compare 0 = and
+    and
+
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_child_exit(self):
+        self._test_program(rb"""
+: main
+    1
+
+    pid fork dup 0 = if pop "abouttoexit" "" event_send exit then
+    var! childPid
+    childPid @ watchpid
+    
+    { "USER.abouttoexit" }list event_waitfor swap pop
+    "USER.abouttoexit" strcmp not and
+
+    childPid @ "PROC.EXIT.%i" fmtstring var! exitEvent
+    exitEvent @ event_exists and
+    { "PROC.EXIT.*" }list event_waitfor swap childPid @ =
+    swap exitEvent @ strcmp not and
+    and
+
+    if me @ "Test passed." notify then
+;
+""")
+
+
+class TestNameOk(MufProgramTestBase):
+    extra_params = {'player_name_limit': 10, 'reserved_player_names': '*{Q*ux|Dug}*',
+        'reserved_names': '*Silly*'}
+    def test_pname(self):
+        self._test_program(rb"""
+: test-one-true
+    dup pname-ok?
+    over "p" ext-name-ok? and
+    swap #1 ext-name-ok? and
+;
+
+: test-one-false
+    dup pname-ok? not
+    over "p" ext-name-ok? not and
+    swap #1 ext-name-ok? not and
+;
+
+: main
+    1
+
+    "a2345678901" test-one-false and
+    "SillyName" test-one-false and
+    "Foo Bar" test-one-false and
+    "FooBar" test-one-true and
+    "Foo(Bar)" test-one-true and
+    "One" test-one-false and
+    "G'kar" test-one-true and
+    "Quuuux" test-one-false and
+    "Dug" test-one-false and
+    "\[" test-one-false and
+    "$foo" test-one-false and
+    "foo&bar" test-one-false and
+    "here" test-one-false and
+    if me @ "Test passed." notify then
+;
+""")
+
+    def test_name(self):
+        self._test_program(rb"""
+: test-one-true
+    dup name-ok?
+    over "t" ext-name-ok? and
+    over "f" ext-name-ok? and
+    over "r" ext-name-ok? and
+    over "e" ext-name-ok? and
+    swap loc @ ext-name-ok? and
+;
+
+: test-one-false
+    dup name-ok? not
+    over "t" ext-name-ok? not and
+    over "f" ext-name-ok? not and
+    over "r" ext-name-ok? not and
+    over "e" ext-name-ok? not and
+    swap loc @ ext-name-ok? not and
+;
+: main
+    1
+    
+    "One's Magic Castle" test-one-true and
+    "One" test-one-true and
+    "Slly Place" test-one-true and
+    "#1 Factory" test-one-false and
+    "Silly Place" test-one-false and
+    "\[" test-one-false and
+    "$foo" test-one-false and
+    "foo&bar" test-one-false and
+    "foo||bar" test-one-false and
+    "\[0m;Name" test-one-false and
+    "Multi\rName" test-one-false and
+    "!stuff" test-one-false and
+    "me" test-one-false and
+    "HOME" test-one-false and
+    "here" test-one-false and
+    if me @ "Test passed." notify then
+;
+""")
+    
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
