@@ -417,3 +417,23 @@ runtest
         if pass_check:
             self.assertTrue(b'\nTest passed.' in result)
         return result
+
+class MPITestBase(ServerTestBase):
+    def _test_mpi(self, program, before=b"", after=b"", pass_check=True, timeout=10, blessed=False):
+        if blessed:
+            bless = b"@bless runtest=_/fl\n"
+        else:
+            bless = b""
+        result = self._do_full_session(CONNECT_GOD +
+rb"""
+@action runtest=here
+@link runtest=here
+@lock runtest=me&!me
+@fail runtest="""+program+rb"""
+""" + bless + before + b"""
+runtest
+""" + after + b"""
+""", timeout=timeout)
+        if pass_check:
+            self.assertTrue(b'\nTest passed.' in result)
+        return result
