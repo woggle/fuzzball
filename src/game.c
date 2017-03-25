@@ -141,6 +141,11 @@ do_restart(dbref player)
 static void
 dump_database_internal(void)
 {
+    if (fuzz_mode) {
+	in_filename = NULL;
+	free(in_filename);
+        return;
+    }
     char tmpfile[2048];
     FILE *f;
 
@@ -226,6 +231,8 @@ panic(const char *message)
 
     /* dump panic file */
     snprintf(panicfile, sizeof(panicfile), "%s.PANIC", dumpfile);
+    if (fuzz_mode)
+        abort();
     if ((f = fopen(panicfile, "wb")) == NULL) {
 	perror("CANNOT OPEN PANIC FILE, YOU LOSE");
 	sync();
@@ -307,6 +314,9 @@ dump_database(void)
 void
 fork_and_dump(void)
 {
+    if (fuzz_mode) {
+        return;
+    }
     epoch++;
 
 #ifndef DISKBASE
@@ -372,16 +382,20 @@ init_game(const char *infile, const char *outfile)
 {
     FILE *f;
 
-    if ((f = fopen(MACRO_FILE, "rb")) == NULL)
-	log_status("INIT: Macro storage file %s is tweaked.", MACRO_FILE);
-    else {
-	macroload(f);
-	fclose(f);
+    if (!fuzz_mode) {
+	if ((f = fopen(MACRO_FILE, "rb")) == NULL)
+            log_status("INIT: Macro storage file %s is tweaked.", MACRO_FILE);
+        else {
+            macroload(f);
+            fclose(f);
+        }
     }
 
-    in_filename = (char *) strdup(infile);
-    if ((input_file = fopen(infile, "rb")) == NULL)
-	return -1;
+    if (!fuzz_mode) {
+	in_filename = (char *) strdup(infile);
+	if ((input_file = fopen(infile, "rb")) == NULL)
+	    return -1;
+    }
 
     db_free();
     init_primitives();		/* init muf compiler */
@@ -389,12 +403,25 @@ init_game(const char *infile, const char *outfile)
     SRANDOM(getpid());		/* init random number generator */
 
     /* ok, read the db in */
-    log_status("LOADING: %s", infile);
-    fprintf(stderr, "LOADING: %s\n", infile);
-    if (db_read(input_file) < 0)
-	return -1;
-    log_status("LOADING: %s (done)", infile);
-    fprintf(stderr, "LOADING: %s (done)\n", infile);
+	
+    if (fuzz_mode) {
+	    dbref newroom = create_object("Room Zero", 1, TYPE_ROOM);
+	    LOCATION(newroom) = -1;
+	    DBFETCH(newroom)->next = -1;
+	    EXITS(newroom) = -1;
+	    DBFETCH(newroom)->sp.room.dropto = -1;
+	    OWNER(newroom) = 1;
+ 	    create_player("One", "password");
+            FLAGS(1) |= WIZARD;
+ 	    create_player("Two", "password");
+    } else {
+        log_status("LOADING: %s", infile);
+        fprintf(stderr, "LOADING: %s\n", infile);
+        if (db_read(input_file) < 0)
+            return -1;
+        log_status("LOADING: %s (done)", infile);
+        fprintf(stderr, "LOADING: %s (done)\n", infile);
+    }
 
     ensure_support();
 

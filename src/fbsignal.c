@@ -72,6 +72,7 @@ sigset_t pselect_signal_mask;
 void
 our_signal(int signo, void (*sighandler) (int))
 {
+    if (fuzz_mode) return;
     struct sigaction act, oact;
 
     act.sa_handler = sighandler;

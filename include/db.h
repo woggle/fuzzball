@@ -450,6 +450,7 @@ extern int recyclable;
 
 int controls(dbref who, dbref what);
 int controls_link(dbref who, dbref what);
+dbref create_object(const char *name, dbref owner, object_flag_type flags);
 dbref create_action(dbref player, const char *name, dbref source);
 dbref create_program(dbref player, const char *name);
 dbref create_room(dbref player, const char *name, dbref parent);

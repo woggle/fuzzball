@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include "compile.h"
 #include "commands.h"
 #include "db.h"
 #include "defines.h"
@@ -147,6 +148,7 @@ long sel_prof_idle_usec;
 unsigned long sel_prof_idle_use;
 int shutdown_flag = 0;
 short wizonly_mode = 0;
+int fuzz_mode = 0;
 
 static void
 show_program_usage(char *prog)
@@ -3246,6 +3248,9 @@ do_armageddon(dbref player, const char *msg)
 {
     char buf[BUFFER_LEN];
 
+    if (fuzz_mode)
+        return;
+
     if (!Wizard(player) || Typeof(player) != TYPE_PLAYER) {
         char unparse_buf[BUFFER_LEN];
         unparse_object(player, player, unparse_buf, sizeof(unparse_buf));
@@ -4317,6 +4322,8 @@ main(int argc, char **argv)
                 no_detach_flag = 1;
             } else if (!strcmp(argv[i], "-resolver")) {
                 strcpyn(resolver_program, sizeof(resolver_program), argv[++i]);
+            } else if (!strcmp(argv[i], "-fuzz")) {
+                fuzz_mode = 1;
 	    } else if (!strcmp(argv[i], "--")) {
 		nomore_options = 1;
 	    } else {
@@ -4346,6 +4353,9 @@ main(int argc, char **argv)
     }
     if (numports < 1) {
 	numports = 1;
+    }
+    if (fuzz_mode) {
+        numports = 0;
     }
     if (!infile_name || !outfile_name) {
 	show_program_usage(*argv);
@@ -4398,11 +4408,13 @@ main(int argc, char **argv)
 	}
 #endif
 
-	/* save the PID for future use */
-	if ((ffd = fopen(PID_FILE, "wb")) != NULL) {
-	    fprintf(ffd, "%d\n", getpid());
-	    fclose(ffd);
-	}
+        if (!fuzz_mode) {
+            /* save the PID for future use */
+            if ((ffd = fopen(PID_FILE, "wb")) != NULL) {
+                fprintf(ffd, "%d\n", getpid());
+                fclose(ffd);
+            }
+        }
 	log_status("%s PID is: %d", argv[0], getpid());
 
 
@@ -4573,8 +4585,41 @@ main(int argc, char **argv)
         spawn_resolver();
 #endif
 
+        if (fuzz_mode) {
+            struct line *lines = 0;
+            struct line *prev = 0;
+            do {
+                char buffer[512];
+                if (!fgets(buffer, sizeof(buffer), stdin))
+                    break;
+                struct line *ln = get_new_line();
+                ln->this_line = alloc_string(*buffer ? buffer : " ");
+                if (prev) {
+                    ln->prev = prev;
+                    prev->next = ln;
+                    prev = ln;
+                } else {
+                    lines = ln;
+                    prev = ln;
+                }
+            } while (1);
+            dbref program = create_program(1, "fuzz.muf");
+            SetMLevel(program, 3);
+            FLAGS(program) |= WIZARD;
+	    PROGRAM_SET_FIRST(program, lines);
+            do_compile(-1, 1, program, 0);
+            free_prog_text(lines);
+	    PROGRAM_SET_FIRST(program, NULL);
+            add_muf_delayq_event(0, -1, 1, 0, 0, program, "", "", 0);
+	    while (next_muckevent_time() == 0) {
+		next_muckevent();
+		muf_event_process();
+	    }
+        } else {
+
 	/* go do it */
 	shovechars();
+	}
 
 	if (restart_flag) {
 	    close_sockets("\r\nServer restarting.  Try logging back on in a few minutes.\r\n");
@@ -4623,7 +4668,7 @@ main(int argc, char **argv)
 	CrT_summarize_to_file(tp_file_log_malloc, "Shutdown");
 #endif
 
-	if (restart_flag) {
+	if (!fuzz_mode && restart_flag) {
 #ifndef WIN32
 	    char **argslist;
 	    char numbuf[32];

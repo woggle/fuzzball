@@ -398,6 +398,9 @@ tune_save_parmsfile(void)
 {
     FILE *f;
 
+    if (fuzz_mode)
+        return 1;
+
     f = fopen(tp_file_sysparms, "wb");
     if (!f) {
 	log_status("Couldn't open file %s!", tp_file_sysparms);

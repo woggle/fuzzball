@@ -132,6 +132,7 @@ extern long sel_prof_idle_usec;
 extern time_t sel_prof_start_time;
 extern int shutdown_flag;
 extern short wizonly_mode;
+extern int fuzz_mode;
 
 int boot_off(dbref player);
 void boot_player_off(dbref player);

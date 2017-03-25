@@ -4,6 +4,7 @@
 #include "fbtime.h"
 #include "fbstrings.h"
 #include "inst.h"
+#include "interface.h"
 #include "log.h"
 #include "tune.h"
 
@@ -20,6 +21,12 @@ vlog2file(int prepend_time, const char *filename, char *format, va_list args)
     char buf[40];
     lt = time(NULL);
     *buf = '\0';
+
+    if (fuzz_mode) {
+	// vfprintf(stderr, format, args);
+	// vfprintf(stderr, "\n", args);
+        return;
+    }
 
     if ((fp = fopen(filename, "ab")) == NULL) {
 	fprintf(stderr, "Unable to open %s!\n", filename);
