@@ -933,6 +933,12 @@ OptimizeIntermediate(COMPSTATE * cstat, int force_err_display)
 	case PROG_TRY:
 	case PROG_JMP:
 	case PROG_EXEC:
+            /* unreachable code can have NULL addrlist/addroffsets, for example
+               from ': x ; foreach' */
+            if (!cstat->addrlist[curr->in.data.number] ||
+                !cstat->addroffsets[curr->in.data.number]) {
+                continue;
+            }
 	    i = cstat->addrlist[curr->in.data.number]->no +
 		    cstat->addroffsets[curr->in.data.number];
             /* unreachable code (outside of any word, like ': x ; if then' can have
