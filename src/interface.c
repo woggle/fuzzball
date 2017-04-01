@@ -149,6 +149,10 @@ unsigned long sel_prof_idle_use;
 int shutdown_flag = 0;
 short wizonly_mode = 0;
 int fuzz_mode = 0;
+int fuzz_mode_nosanity = 0;
+int fuzz_muf = 0;
+int fuzz_mpi = 0;
+int fuzz_command = 0;
 
 static void
 show_program_usage(char *prog)
@@ -2377,6 +2381,11 @@ shovechars()
 
     while (shutdown_flag == 0) {
 	gettimeofday(&current_time, (struct timezone *) 0);
+        if (fuzz_mode && (next_muckevent_time() > 0 || next_muckevent_time() < 0)) {
+            break;
+        } else {
+            tp_pause_min = 0;
+        }
 	last_slice = update_quotas(last_slice, current_time);
 
 	next_muckevent();
@@ -2488,6 +2497,10 @@ shovechars()
 	    timeout.tv_sec = tmptq + (tp_pause_min / 1000);
 	    timeout.tv_usec = (tp_pause_min % 1000) * 1000L;
 	}
+        if (fuzz_mode) {
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 0;
+        }
 	gettimeofday(&sel_in, NULL);
 
 #ifdef HAVE_PSELECT
@@ -4176,6 +4189,7 @@ main(int argc, char **argv)
     int err;
 #endif				/* WIN32 */
 #ifdef DEBUG
+#if 0
     /* This makes glibc's malloc abort() on heap errors. */
     if (strcmp(DoNull(getenv("MALLOC_CHECK_")), "2") != 0) {
 	if (setenv("MALLOC_CHECK_", "2", 1) < 0) {
@@ -4193,6 +4207,7 @@ main(int argc, char **argv)
 	    execvp(argv[0], (char **) argv2);
 	}
     }
+#endif
 #endif				/* DEBUG */
     listener_port[0] = TINYPORT;
 
@@ -4322,8 +4337,17 @@ main(int argc, char **argv)
                 no_detach_flag = 1;
             } else if (!strcmp(argv[i], "-resolver")) {
                 strcpyn(resolver_program, sizeof(resolver_program), argv[++i]);
-            } else if (!strcmp(argv[i], "-fuzz")) {
+            } else if (!strcmp(argv[i], "-fuzz_muf")) {
                 fuzz_mode = 1;
+                fuzz_muf = 1;
+            } else if (!strcmp(argv[i], "-fuzz_mpi")) {
+                fuzz_mode = 1;
+                fuzz_mpi = 1;
+            } else if (!strcmp(argv[i], "-fuzz_command")) {
+                fuzz_mode = 1;
+                fuzz_command = 1;
+            } else if (!strcmp(argv[i], "-fuzz_nosanity")) {
+                fuzz_mode_nosanity = 1;
 	    } else if (!strcmp(argv[i], "--")) {
 		nomore_options = 1;
 	    } else {
@@ -4585,7 +4609,7 @@ main(int argc, char **argv)
         spawn_resolver();
 #endif
 
-        if (fuzz_mode) {
+        if (fuzz_muf) {
             struct line *lines = 0;
             struct line *prev = 0;
             do {
@@ -4604,6 +4628,7 @@ main(int argc, char **argv)
                 }
             } while (1);
             dbref program = create_program(1, "fuzz.muf");
+            // write_program(lines, program);
             SetMLevel(program, 3);
             FLAGS(program) |= WIZARD;
 	    PROGRAM_SET_FIRST(program, lines);
@@ -4615,6 +4640,37 @@ main(int argc, char **argv)
 		next_muckevent();
 		muf_event_process();
 	    }
+        } else if (fuzz_mpi) {
+            // dummy objects for MPI to manipulate
+            dbref thing1 = create_thing(1, "a", 1);
+            dbref thing2 = create_thing(1, "b", 0);
+            dbref thing3 = create_thing(1, "c", 0);
+            do {
+                char buffer[BUFFER_LEN];
+                if (!fgets(buffer, sizeof(buffer) - 50, stdin))
+                    break;
+                strcat(buffer, "}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}");
+                char result[256];
+                mesg_parse(-1, 1, 0, 0, 
+                    buffer, result, sizeof result,
+                    MPI_ISBLESSED |  MPI_NOHOW | MPI_ISPRIVATE
+                );
+            } while (1);
+        } else if (fuzz_command) {
+            do {
+                char buffer[BUFFER_LEN];
+                if (!fgets(buffer, sizeof(buffer), stdin))
+                    break;
+                if (strlen(buffer) > 0 &&
+                    buffer[strlen(buffer) - 1] == '\n') {
+                    buffer[strlen(buffer) - 1] = '\0';
+                }
+                process_command(-1, 1, buffer);
+                while (next_muckevent_time() == 0) {
+                    next_muckevent();
+                    muf_event_process();
+                }
+            } while (1);
         } else {
 
 	/* go do it */

@@ -927,8 +927,10 @@ dequeue_prog_real(dbref program, int killmode, const char *file, const int line)
     timequeue ptr;
 
 #ifdef DEBUG
+#if 0
     fprintf(stderr, "[debug] dequeue_prog(#%d, %d) called from %s:%d\n", program, killmode,
 	    file, line);
+#endif
 #endif				/* DEBUG */
     DEBUGPRINT("dequeue_prog: tqhead = %p\n", tqhead);
     while (tqhead) {
@@ -999,10 +1001,12 @@ dequeue_prog_real(dbref program, int killmode, const char *file, const int line)
      * to rethink what we're doing here. */
     /* assert(PROGRAM_INSTANCES(program) == 0); */
 #ifdef DEBUG
+#if 0
     /* KLUDGE by premchai21 */
     if (Typeof(program) == TYPE_PROGRAM)
 	fprintf(stderr, "[debug] dequeue_prog: %d instances of #%d\n",
 		PROGRAM_INSTANCES(program), program);
+#endif
 #endif
     return (count);
 }

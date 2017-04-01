@@ -17,6 +17,7 @@
 
 #define VERSION "Muck2.2fb7.00a3"
 
+
 /************************************************************************
    Administrative Options 
 
@@ -51,7 +52,7 @@
  * (make resolver) and put it in the directory that the fbmuck program is
  * run from.
  */
-#define SPAWN_HOST_RESOLVER
+#undef SPAWN_HOST_RESOLVER
 
 /*
  * This is a fairly interesting one -- if there's no DISKBASING, and thus
@@ -155,6 +156,8 @@ typedef int dbref;
 # undef NDEBUG
 #include <assert.h>
 #define DEBUGPRINT(...) fprintf(stderr, __VA_ARGS__)
+#undef DEBUGPRINT /* FIXME */
+#define DEBUGPRINT(...)
 #else
 # define NDEBUG
 #include <assert.h>

@@ -973,6 +973,8 @@ static char buf2[1000];
 void
 do_sanchange(dbref player, const char *command)
 {
+    if (fuzz_mode_nosanity)
+        return;
     dbref d, v;
     char field[50];
     char which[1000];

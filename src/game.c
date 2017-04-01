@@ -400,7 +400,11 @@ init_game(const char *infile, const char *outfile)
     db_free();
     init_primitives();		/* init muf compiler */
     mesg_init();		/* init mpi interpreter */
-    SRANDOM(getpid());		/* init random number generator */
+    if (fuzz_mode) {
+        SRANDOM(42);
+    } else {
+        SRANDOM(getpid());		/* init random number generator */
+    }
 
     /* ok, read the db in */
 	
