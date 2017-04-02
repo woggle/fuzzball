@@ -417,6 +417,7 @@ init_game(const char *infile, const char *outfile)
 	    OWNER(newroom) = 1;
  	    create_player("One", "password");
             FLAGS(1) |= WIZARD;
+            SetMLevel(1, 3);
  	    create_player("Two", "password");
     } else {
         log_status("LOADING: %s", infile);
