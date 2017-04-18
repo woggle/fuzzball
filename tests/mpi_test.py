@@ -87,6 +87,10 @@ foo
         self.assertTrue(b'Foo failure.' in result1)
 
 
+class TestTime(MPITestBase):
+    def test_ftime_sanity(self):
+        self._test_mpi(rb"{null:{FTIME:%a,,100000000000000000}}Test passed.")
+
 class TestFunc(MPITestBase):
     def test_threearg(self):
         self._test_mpi(rb"{func:foo,va,vb,vc,func({&va}:{&vb}:{&vc})}"
@@ -97,8 +101,12 @@ class TestFunc(MPITestBase):
                       +rb"{if:{eq:{foo:x,y,z},func(x:y:z)},Test passed.}")
 
     def test_set(self):
-        self._test_mpi(rb"{func:foo,va,vb,vc,{null:{set:va,quux}}func({v:va}:{v:vb}:{v:vc})}"
+        self._test_mpi(rb"{func:foo,va,vb,vc,func({v:va}:{v:vb}:{v:vc})}"
                       +rb"{if:{eq:{foo:x,y,z},func(quux:y:z)},Test passed.}")
+    
+    def test_func_loop(self):
+        result = self._test_mpi(rb"{while:1,{func:x,}}", pass_check=False)
+        self.assertTrue(b"Too many functions" in result)
 
 
 class TestProp(MPITestBase):
@@ -306,7 +314,7 @@ class TestList(MPITestBase):
         self._test_mpi(rb"{if:{eq:{lunion:foo\rbar\rbaz\rquux\rquux\rbar,baz\rquux\rnotin},foo\rbar\rbaz\rquux\rnotin},Test passed.}")
 
     def test_lsort_simple(self):
-        self._test_mpi(rb"{if:{eq:{lsort:foo\rbar\rbaz\rquux\rquux\rbar\rbaz\rquux\rnotin},bar\rbar\rbaz\rbaz\rfoo\rnotin\rquux\rquux\rquux},test passed.}")
+        self._test_mpi(rb"{if:{eq:{lsort:foo\rbar\rbaz\rquux\rquux\rbar\rbaz\rquux\rnotin},bar\rbar\rbaz\rbaz\rfoo\rnotin\rquux\rquux\rquux},Test passed.}")
     
     def test_lsort_func(self):
         self._test_mpi(rb"{if:{eq:{lsort:-1\r3\r4,x,y,{lt:{abs:{subt:{&x},2}},{abs:{subt:{&y},2}}}},-1\r4\r3},Test passed.}")
@@ -363,7 +371,7 @@ class TestCompare(MPITestBase):
     def test_while(self):
         self._test_mpi(rb"{null:{with:x,10,{while:{ne:{&x},0},{store:{&x},_testprop#/{&x}}{dec:x}}{store:10,_testprop#}}}"
                      + rb"{if:{eq:{concat:_testprop},1 2 3 4 5 6 7 8 9 10},Test passed.}")
-
+    
     def test_for(self):
         self._test_mpi(rb"{null:{for:x,10,1,-1,{store:{&x},_testprop#/{&x}}{dec:x}}{store:10,_testprop#}}"
                      + rb"{if:{eq:{concat:_testprop},1 2 3 4 5 6 7 8 9 10},Test passed.}")
@@ -404,7 +412,7 @@ class TestMath(MPITestBase):
         self._test_mpi(rb"{null:{mod:10,0}}Test passed.")
 
     def test_abs(self):
-        self._test_mpi(rb"{if:{eq:{abs:-0042}/{abs:42}/{abs:0},-42/42/0},Test passed.}")
+        self._test_mpi(rb"{if:{eq:{abs:-0042}/{abs:42}/{abs:0},42/42/0},Test passed.}")
 
     def test_sign(self):
         self._test_mpi(rb"{if:{eq:{sign:-0042}/{sign:42}/{sign:0},-1/1/0},Test passed.}")
@@ -538,12 +546,19 @@ drop test.muf
 @lock Foo=TestUser
 """)
 
+    def test_testlock_invalid(self):
+        result = self._test_mpi(rb"{testlock:,,}", pass_check=False)
+        self.assertTrue(b"failed" in result)
+
+    def test_testlock_invalid2(self):
+        result = self._test_mpi(rb"{testlock:,,#-7}", pass_check=False)
+        self.assertTrue(b"failed" in result)
+
     def test_testlock(self):
-        self._test_mpi(rb"{if:{and:{not:{testlock:Foo,_testprop,me}},{testlock:Foo,_testprop,TestUser}},Test passed.}",
+        result = self._test_mpi(rb"{if:{and:{not:{testlock:Foo,_testprop,me}},{testlock:Foo,_testprop,TestUser}},Test passed.}",
             before=rb"""
-@pcreate TestUser=foo
 @create Foo
-@propset Foo=lock:_testprop:TestUser
+@propset foo=lock:_testprop:me
 """)
 
     def test_name_simple(self):

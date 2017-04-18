@@ -52,6 +52,32 @@ ex IdTwo
         self.assertTrue(b'Location: Room Zero' in result)
         self.assertTrue(b'Location: One' in result)
 
+class TestGetZombie(ServerTestBase):
+    extra_params = {'allow_zombies': 'yes'}
+    def test_get_zombie_thief(self):
+        result = self._do_full_session(CONNECT_GOD +
+b"""
+@pcreate OtherPlayer=test
+@create Zombie
+@set Zombie=Z
+@create OtherThing
+@chown OtherThing=OtherPlayer
+@force Zombie=get OtherThing
+ex OtherThing
+"""
+)
+        self.assertTrue(b'''Zombie> Zombies aren't allowed to be thieves!''' in result)
+        self.assertTrue(b'Location: One' in result)
+
+    # regression for a crash
+    def test_get_room_zero(self):
+        result = self._do_full_session(CONNECT_GOD +
+b"""
+@create Zombie
+@set Zombie=Z
+drop Zombie
+@force Zombie=get #0
+""")
 
 class TestRecycle(ServerTestBase):
     def test_simple(self):
@@ -63,3 +89,7 @@ ex #2
 """)
         self.assertTrue(b'is garbage.' in result)
 
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
+    unittest.main()

@@ -403,7 +403,7 @@ class ServerTestBase(unittest.TestCase):
         self.server.cleanup()
 
 class MufProgramTestBase(ServerTestBase):
-    def _test_program(self, program, before=b"", after=b"", pass_check=True, timeout=10):
+    def _test_program(self, program, before=b"", after=b"", pass_check=True, timeout=10, debug=True):
         result = self._do_full_session(CONNECT_GOD +
 b"""
 @program test.muf
@@ -412,7 +412,7 @@ i
 .
 c
 q
-@set test.muf=D
+""" + (b"@set test.muf=D" if debug else b"") + b"""
 @act runtest=me
 @link runtest=test.muf
 """ + before + b"""
