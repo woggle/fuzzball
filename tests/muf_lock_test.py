@@ -32,7 +32,7 @@ class TestParseUnparseLock(MufProgramTestBase):
     catch pop endcatch
     me @ "Test passed." notify
 ;
-""", debug=False)
+""", debug=False, timeout=20)
 
     def test_overflow_pretty(self):
         self._test_program(rb"""

@@ -101,7 +101,7 @@ class TestFunc(MPITestBase):
                       +rb"{if:{eq:{foo:x,y,z},func(x:y:z)},Test passed.}")
 
     def test_set(self):
-        self._test_mpi(rb"{func:foo,va,vb,vc,func({v:va}:{v:vb}:{v:vc})}"
+        self._test_mpi(rb"{func:foo,va,vb,vc,{null:{set:va,quux}}func({v:va}:{v:vb}:{v:vc})}"
                       +rb"{if:{eq:{foo:x,y,z},func(quux:y:z)},Test passed.}")
     
     def test_func_loop(self):
