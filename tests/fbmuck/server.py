@@ -128,6 +128,9 @@ class Server(object):
     def _forward_stderr(self):
         while True:
             data = yield from self.process.stderr.readline()
+            if b'Ready for connections.' in data:
+                if self.ready_future:
+                    self.ready_future.set_result(True)
             if len(data) == 0:
                 break
             sys.stdout.write(data.decode())
@@ -150,6 +153,7 @@ class Server(object):
            '-ipv4',
            '-nodetach',
            '-parmfile', 'test_parm_file',
+           '-readymessage',
         ]
         options = yield from get_server_options()
         if 'IPV6' in options:
@@ -169,10 +173,11 @@ class Server(object):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=my_env)
+        self.ready_future = asyncio.Future()
         self.forward_stdout = asyncio.ensure_future(self._forward_stdout())
         self.forward_stderr = asyncio.ensure_future(self._forward_stderr())
         self.process_wait = asyncio.ensure_future(self.process.wait())
-        yield from asyncio.sleep(0.2) # wait for server to bind, etc.
+        yield from self.ready_future
 
     def _stop(self, timeout):
         logging.info('about to SIGTERM to %d', self.process.pid)
@@ -437,3 +442,4 @@ runtest
         if pass_check:
             self.assertTrue(b'\nTest passed.' in result)
         return result
+
