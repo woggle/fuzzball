@@ -2304,6 +2304,10 @@ shovechars()
 
     listen_bound_sockets();
 
+    if (ready_message_flag) {
+        fprintf(stderr, "Ready for connections.\n");
+    }
+
     gettimeofday(&last_slice, (struct timezone *) 0);
 
     avail_descriptors = max_open_files() - 5;
@@ -4522,10 +4526,6 @@ main(int argc, char **argv)
 #ifdef SPAWN_HOST_RESOLVER
         spawn_resolver();
 #endif
-
-        if (ready_message_flag) {
-            fprintf(stderr, "Ready for connections.\n");
-        }
 
 
 	/* go do it */
