@@ -555,10 +555,11 @@ drop test.muf
         self.assertTrue(b"failed" in result)
 
     def test_testlock(self):
-        result = self._test_mpi(rb"{if:{and:{not:{testlock:Foo,_testprop,me}},{testlock:Foo,_testprop,TestUser}},Test passed.}",
+        result = self._test_mpi(rb"{if:{and:{not:{testlock:Foo,_testprop,me}},{testlock:Foo,_testprop,*TestUser}},Test passed.}",
             before=rb"""
 @create Foo
-@propset foo=lock:_testprop:me
+@pcreate TestUser=xxx
+@propset foo=lock:_testprop:TestUser
 """)
 
     def test_name_simple(self):

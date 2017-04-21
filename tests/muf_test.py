@@ -49,6 +49,17 @@ test
         # Either in @ps output or directly
         self.assertTrue(b'One This is a message.' in result)
 
+class TestTry(MufProgramTestBase):
+    def test_simple_try(self):
+        result = self._test_program(b"""
+: main
+    "original value"
+    "bar" { "foo" "more foo" }list "baz" 3 try "xxx" abort
+    catch "xxx" instring over "original value" strcmp not and if me @ "Test passed." notify then endcatch
+    
+
+;
+""")
 
 
 if __name__ == '__main__':
