@@ -858,15 +858,7 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 				abort_message = "Format specified object not found.";
                                 goto cleanup_and_abort;
                             }
-<<<<<<< b3846d18fa388a01e6f198a033e3bfb22a5dace3
-			    if (!valid_object(oper3) && oper3->data.objref != NOTHING) {
-				abort_message = "Format specified object not found.";
-                                goto cleanup_and_abort;
-                            }
-			    snprintf(hold, sizeof(hold), "#%d", oper3->data.objref);
-=======
 			    snprintf(hold, sizeof(hold), "#%d", cur_value->data.objref);
->>>>>>> Avoid CLEAR()ing values from arrays in array_fmtstrings.
 			    snprintf(tbuf, sizeof(tbuf), sfmt, hold);
 			    tlen = strlen(tbuf);
 			    if (slrj == 2) {
@@ -895,15 +887,11 @@ prim_array_fmtstrings(PRIM_PROTOTYPE)
 				abort_message = "Format specified object not found.";
                                 goto cleanup_and_abort;
                             } 
-<<<<<<< b3846d18fa388a01e6f198a033e3bfb22a5dace3
-			    ref = oper3->data.objref;
-=======
 			    if (!valid_object(cur_value)) {
 				abort_message = "Format specified object not valid.";
                                 goto cleanup_and_abort;
                             }
 			    ref = cur_value->data.objref;
->>>>>>> Avoid CLEAR()ing values from arrays in array_fmtstrings.
 			    CHECKREMOTE(ref);
 			    if (ref != NOTHING && NAME(ref)) {
 				strcpyn(hold, sizeof(hold), NAME(ref));
