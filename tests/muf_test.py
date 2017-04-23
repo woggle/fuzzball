@@ -69,7 +69,7 @@ class TestListener(ServerTestBase):
 b"""
 @program test.muf
 i
-: main me @ notify ;
+: main me @ swap "XXX" strcat notify ;
 .
 c
 q
@@ -83,14 +83,14 @@ test
 @ps
 """)
         # Either in @ps output or directly
-        self.assertTrue(b'One This is a message.' in result)
+        self.assertTrue(b'One This is a message.XXX' in result)
         
     def test_listen_room_muf_dbrefprop(self):
         result = self._do_full_session(CONNECT_GOD +
 b"""
 @program test.muf
 i
-: main me @ notify ;
+: main me @ swap "XXX" strcat notify ;
 .
 c
 q
@@ -104,7 +104,7 @@ test
 @ps
 """)
         # Either in @ps output or directly
-        self.assertTrue(b'One This is a message.' in result)
+        self.assertTrue(b'One This is a message.XXX' in result)
 
 class TestTry(MufProgramTestBase):
     def test_simple_try(self):
