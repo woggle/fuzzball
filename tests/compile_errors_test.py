@@ -7,6 +7,8 @@ import unittest
 from fbmuck.server import Server, ServerTestBase, CONNECT_GOD
 
 
+# These tests exist primarily to make sure these compile errors don't trigger
+# memory errors in the compiler.
 class TestMufCompileErrors(ServerTestBase):
     def test_uncompilable_unknown_public(self):
         result = self._do_full_session(CONNECT_GOD +
@@ -238,6 +240,18 @@ i
 c
 q
 """)
+
+    def test_incomplete_for_and_if(self):
+        result = self._do_full_session(CONNECT_GOD +
+rb"""
+@program foo.muf
+i
+: main for if break
+.
+c
+q
+""")
+        self.assertTrue(b'Unexpected end of file' in result)
 
 
 if __name__ == '__main__':

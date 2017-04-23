@@ -724,6 +724,16 @@ class TestSMatch(MufProgramTestBase):
 ;
 """)
 
+    def test_oob_regression(self):
+        self._test_program(rb"""
+: main
+    1
+    "Two" "*o[^x]*" smatch not and
+    if me @ "Test passed." notify then
+;
+""")
+
+
 class TestStripLead(MufProgramTestBase):
     def test_simple(self):
         self._test_program(rb"""

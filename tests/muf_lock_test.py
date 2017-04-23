@@ -49,6 +49,14 @@ class TestParseUnparseLock(MufProgramTestBase):
     me @ "Test passed." notify
 ;
 """)
+    
+    # this used to do an out-of-bounds read
+    def test_malformed_regression_1(self):
+        self._test_program(rb"""
+: main
+   "#3&" parselock not if me @ "Test passed." notify then
+;
+""")
 
 class TestTestLock(MufProgramTestBase):
     def test_simple(self):
