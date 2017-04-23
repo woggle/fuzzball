@@ -22,20 +22,46 @@ class GenForMufFile(ServerTestBase):
             self.code = code
         self.description = the_file
         # hide fixture from test discovery
-        self.runTest = self._test
-
+        self.test = self._test
+    
     def _test(self):
-        result = self._test_program(code, pass_check=False)
-        for pattern in expect_pattern:
-            self.assertTrue(re.match(pattern, result),
+        result = self._test_program(self.code, pass_check=False)
+        for pattern in self.patterns:
+            self.assertTrue(re.search(pattern, result),
                 msg='expected output for %s: <%s> to match <%s>' % (self.filename, result, pattern))
 
-def test_external_files():
+def normalize_filename(name):
+    name = re.sub(r'/muf-tests/', '', name)
+    name = re.sub(r'/', '_', name)
+    name = re.sub(r'\.muf', '', name)
+    name = re.sub(r'\.', '', name)
+    return name
+
+def generate():
     for root, dirs, files in os.walk('./muf-tests'):
         for file in files:
             if file.endswith('.muf'):
-                yield (GenForMufFile(os.path.join(root, file)),)
+                result = {}
+                with open(os.path.join(root, file), 'rb') as fh:
+                    code = fh.read()
+                    expect_patterns = re.findall(rb'^EXPECT:(.*)', code)
+                    if len(expect_patterns) == 0:
+                        expect_patterns = [rb'\nTest passed.']
+                    result['patterns'] = expect_patterns
+                    result['code'] = code
+                result['filename'] = os.path.join(root, file)
+                result['description'] = file
+                # hide fixture from test discovery
+                def _test(self):
+                    result = self._test_program(self.code, pass_check=False)
+                    for pattern in self.patterns:
+                        self.assertTrue(re.search(pattern, result),
+                            msg='expected output for %s: <%s> to match <%s>' % (self.filename, result, pattern))
+                result['test'] = _test
+                name = normalize_filename(result['filename'])
+                globals()[name] = type(name, (ServerTestBase,), result)
 
+generate()
 
 class TestListener(ServerTestBase):
     def test_listen_room_muf(self):
