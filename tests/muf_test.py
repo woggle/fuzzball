@@ -1,10 +1,42 @@
 #!/usr/bin/env python3.6
 import asyncio
 import logging
+import os
+import os.path
 import re
 import unittest
+import nose2
 
 from fbmuck.server import Server, ServerTestBase, MufProgramTestBase, CONNECT_GOD
+
+class GenForMufFile(ServerTestBase):
+    def __init__(self, the_file=None):
+        super(ServerTestBase, self).__init__()
+        self.filename = the_file
+        with open(self.filename, 'rb') as fh:
+            code = fh.read()
+            expect_patterns = re.findall(rb'^EXPECT:(.*)', code)
+            if len(expect_patterns) == 0:
+                expect_patterns = [rb'\nTest passed.']
+            self.patterns = expect_patterns
+            self.code = code
+        self.description = the_file
+        # hide fixture from test discovery
+        self.test = self._test
+
+    def _test(self):
+        result = self._test_program(code, pass_check=False)
+        for pattern in expect_pattern:
+            self.assertTrue(re.match(pattern, result),
+                msg='expected output for %s: <%s> to match <%s>' % (self.filename, result, pattern))
+
+def muf_tests():
+    for root, dirs, files in os.walk('./muf-tests'):
+        for file in files:
+            if file.endswith('.muf'):
+                print("Using file ", file)
+                yield GenForMufFile(os.path.join(root, file))
+
 
 class TestListener(ServerTestBase):
     def test_listen_room_muf(self):
@@ -64,4 +96,4 @@ class TestTry(MufProgramTestBase):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    unittest.main()
+    nose2.main()

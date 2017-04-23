@@ -402,7 +402,6 @@ class ServerTestBase(unittest.TestCase):
         self.assertEqual(self.server.exit_code(), 0)
         self.server.cleanup()
 
-class MufProgramTestBase(ServerTestBase):
     def _test_program(self, program, before=b"", after=b"", pass_check=True, timeout=10, debug=True):
         result = self._do_full_session(CONNECT_GOD +
 b"""
@@ -423,7 +422,6 @@ runtest
             self.assertTrue(b'\nTest passed.' in result)
         return result
 
-class MPITestBase(ServerTestBase):
     def _test_mpi(self, program, before=b"", after=b"", pass_check=True, timeout=10, blessed=False):
         if blessed:
             bless = b"@bless runtest=_/fl\n"
@@ -443,3 +441,8 @@ runtest
             self.assertTrue(b'\nTest passed.' in result)
         return result
 
+class MufProgramTestBase(ServerTestBase):
+    pass
+
+class MPITestBase(ServerTestBase):
+    pass

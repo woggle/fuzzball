@@ -6,7 +6,7 @@ PYTHON=python3.6
 endif
 
 test:
-	$(PYTHON) -m unittest discover -b -v -p '*_test.py'
+	$(PYTHON) -m nose2 -c 'nose2.discover()' --verbose --log-level ERROR
 
 coverage:
 	lcov -c -i -d ../src -o coverage-base
