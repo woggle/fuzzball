@@ -4636,7 +4636,8 @@ main(int argc, char **argv)
             free_prog_text(lines);
 	    PROGRAM_SET_FIRST(program, NULL);
             add_muf_delayq_event(0, -1, 1, 0, -1, program, "", "", 0);
-	    while (next_muckevent_time() == 0) {
+            int count = 0;
+	    while (next_muckevent_time() == 0 && ++count < 100) {
 		next_muckevent();
 		muf_event_process();
 	    }
