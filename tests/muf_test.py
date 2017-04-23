@@ -34,7 +34,6 @@ def test_external_files():
     for root, dirs, files in os.walk('./muf-tests'):
         for file in files:
             if file.endswith('.muf'):
-                print("Using file ", file)
                 yield (GenForMufFile(os.path.join(root, file)),)
 
 
