@@ -87,9 +87,23 @@ foo
         self.assertTrue(b'Foo failure.' in result1)
 
 
+class TestParseErrors(MPITestBase):
+    def test_bad_escape(self):
+        result = self._test_mpi(rb"{le:rgo,\\", pass_check=False)
+        self.assertTrue(b'End brace not found' in result)
+    
+    def test_bad_escape_2(self):
+        result = self._test_mpi(rb"{filter:b,a,in`valid}}}", pass_check=False)
+        self.assertTrue(b'End brace not found' in result)
+
+    def test_bad_while(self):
+        result = self._test_mpi(rb"{NULL:{WHILE:1,{NULL:x}{NULL}{NULL:{NULL:{NULL}}}}}}}}}}}}}}", pass_check=False)
+        self.assertTrue(b'Instruction limit exceeded' in result)
+
 class TestTime(MPITestBase):
     def test_ftime_sanity(self):
-        self._test_mpi(rb"{null:{FTIME:%a,,100000000000000000}}Test passed.")
+        result = self._test_mpi(rb"{null:{FTIME:%a,,100000000000000000}}Test passed.", pass_check=False)
+        self.assertTrue(b'Out of range time' in result or b'Test passed.' in result)
 
 class TestFunc(MPITestBase):
     def test_threearg(self):

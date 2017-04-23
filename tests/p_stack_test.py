@@ -294,6 +294,14 @@ class TestStack(MufProgramTestBase):
 ;
 """)
 
+    def test_over_overflow(self):
+        result = self._test_program(rb"""
+: main
+    0 0 over main
+;
+""", pass_check=False)
+        self.assertTrue(b'stack overflow' in result.lower())
+
 
 class TestCheckArgs(MufProgramTestBase):
     ALL_TYPES = b"adDeEfFilpPrRsStTv?"
