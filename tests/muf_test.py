@@ -22,7 +22,7 @@ class GenForMufFile(ServerTestBase):
             self.code = code
         self.description = the_file
         # hide fixture from test discovery
-        self.test = self._test
+        self.runTest = self._test
 
     def _test(self):
         result = self._test_program(code, pass_check=False)
@@ -30,12 +30,12 @@ class GenForMufFile(ServerTestBase):
             self.assertTrue(re.match(pattern, result),
                 msg='expected output for %s: <%s> to match <%s>' % (self.filename, result, pattern))
 
-def muf_tests():
+def test_external_files():
     for root, dirs, files in os.walk('./muf-tests'):
         for file in files:
             if file.endswith('.muf'):
                 print("Using file ", file)
-                yield GenForMufFile(os.path.join(root, file))
+                yield (GenForMufFile(os.path.join(root, file)),)
 
 
 class TestListener(ServerTestBase):
