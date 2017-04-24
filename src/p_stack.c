@@ -290,16 +290,18 @@ prim_rotate(PRIM_PROTOTYPE)
     oper1 = POP();
     if (oper1->type != PROG_INTEGER)
 	abort_interp("Invalid argument type.");
-    tmp = oper1->data.number;	/* Depth on stack */
-    EXPECT_WRITE_STACK(abs(tmp));
-    if (tmp > 0) {
+    int n = oper1->data.number;	/* Depth on stack */
+    if (n == INT_MIN)
+        abort_interp("Stack underflow.");
+    EXPECT_WRITE_STACK(abs(n));
+    if (n > 0) {
 	temp2 = arg[*top - tmp];
-	for (; tmp > 0; tmp--)
+	for (tmp = n; tmp > 0; tmp--)
 	    arg[*top - tmp] = arg[*top - tmp + 1];
 	arg[*top - 1] = temp2;
-    } else if (tmp < 0) {
+    } else if (n < 0) {
 	temp2 = arg[*top - 1];
-	for (tmp = -1; tmp > oper1->data.number; tmp--)
+	for (tmp = -1; tmp > n; tmp--)
 	    arg[*top + tmp] = arg[*top + tmp - 1];
 	arg[*top + tmp] = temp2;
     }
