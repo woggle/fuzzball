@@ -4403,7 +4403,26 @@ main(int argc, char **argv)
     }
 #endif
 
+#ifdef __AFL_HAVE_MANUAL_CONTROL
+    while(__AFL_LOOP(1000)) {
+        numports = numsocks = max_descriptor = 0;
+#ifdef USE_IPV6
+        numsocks_v6 = 0;
+#endif
+#ifdef USE_SSL
+        ssl_numports = ssl_numsocks = 0;
+#ifdef USE_IPV6
+        ssl_numsocks_v6 = 0;
+#endif
+        ssl_ctx = NULL;
+#endif
+        ndescriptors = 0;
+        init_descriptor_lookup();
+        init_descr_count_lookup();
+#endif
+
     tune_load_parms_defaults();
+
 
     if (!sanity_interactive) {
 
@@ -4505,6 +4524,7 @@ main(int argc, char **argv)
 
 	set_console();
 #endif
+
 
 
 /*
@@ -4770,6 +4790,9 @@ main(int argc, char **argv)
 #endif				/* WIN32 */
 	}
     }
+#ifdef __AFL_HAVE_MANUAL_CONTROL
+    }
+#endif
 
     exit(0);
 }
