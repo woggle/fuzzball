@@ -493,6 +493,7 @@ tune_freeparms()
     while (tstr->name) {
 	if (!tstr->isdefault) {
 	    free((char *) *tstr->str);
+            *tstr->str = NULL;
 	}
 	tstr++;
     }

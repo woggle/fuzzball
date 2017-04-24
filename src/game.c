@@ -452,6 +452,8 @@ cleanup_game()
     if (dumpfile)
         free((void *) dumpfile);
     free((void *) in_filename);
+    dumpfile = NULL;
+    in_filename = NULL;
 }
 #endif
 
