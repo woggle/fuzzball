@@ -44,16 +44,18 @@ def generate():
                 result = {}
                 with open(os.path.join(root, file), 'rb') as fh:
                     code = fh.read()
-                    expect_patterns = re.findall(rb'^EXPECT:(.*)', code)
+                    expect_patterns = re.findall(rb'^EXPECT:(.*)', code, flags=re.MULTILINE)
+                    before = re.findall(rb'^BEFORE:(.*)', code, flags=re.MULTILINE)
                     if len(expect_patterns) == 0:
                         expect_patterns = [rb'\nTest passed.']
+                    result['before'] = b'\n'.join(before)
                     result['patterns'] = expect_patterns
                     result['code'] = code
                 result['filename'] = os.path.join(root, file)
                 result['description'] = file
                 # hide fixture from test discovery
                 def _test(self):
-                    result = self._test_program(self.code, pass_check=False)
+                    result = self._test_program(self.code, pass_check=False, before=self.before)
                     for pattern in self.patterns:
                         self.assertTrue(re.search(pattern, result),
                             msg='expected output for %s: <%s> to match <%s>' % (self.filename, result, pattern))
@@ -83,6 +85,7 @@ test
 @ps
 """)
         self.assertTrue(b'One This is a message.XXX' in result)
+
         
     def test_listen_room_muf_dbrefprop(self):
         result = self._do_full_session(CONNECT_GOD +

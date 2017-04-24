@@ -253,6 +253,18 @@ q
 """)
         self.assertTrue(b'Unexpected end of file' in result)
 
+    def test_incomplete_try(self):
+        result = self._do_full_session(CONNECT_GOD +
+rb"""
+@program foo.muf
+i
+: m
+try
+"0"0 begin dup "0"#+
+.
+c
+q
+""")
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
