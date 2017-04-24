@@ -202,6 +202,7 @@ typedef int dbref;
 # define RANDOM()	rand()
 #endif
 
+
 /*
  * Time stuff.
  */
@@ -215,6 +216,22 @@ typedef int dbref;
 #  include <time.h>
 # endif
 #endif
+
+extern int fuzz_mode;
+static inline time_t maybe_fuzz_time(time_t *pt) {
+    if (fuzz_mode) {
+        if (pt) {
+            *pt = 100000000;
+            return *pt;
+        } else {
+            return 100000000;
+        }
+    } else {
+        return time(pt);
+    }
+}
+
+#define time(x) maybe_fuzz_time(x)
 
 /*
  * Include some of the useful local headers here.

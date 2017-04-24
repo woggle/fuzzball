@@ -15,6 +15,7 @@
 #include "interface.h"
 #include "log.h"
 #include "msgparse.h"
+#include "player.h"
 #include "predicates.h"
 #include "props.h"
 #include "tune.h"

@@ -3,6 +3,8 @@
 #include "fbmath.h"
 #include "inst.h"
 
+extern int fuzz_mode;
+
 float
 _int_f_rand(void)
 {
@@ -364,7 +366,11 @@ init_seed(char *seed)
     }
     if (!seed) {
 	/* No fixed seed given... make something up */
-	srand((unsigned int) time(NULL));
+        if (fuzz_mode) {
+            srand(42);
+        } else { 
+            srand((unsigned int) time(NULL));
+        }
 	for (int loop = 0; loop < 8; loop++)
 	    tbuf[loop] = rand();
 	memcpy(digest, tbuf, 16);
