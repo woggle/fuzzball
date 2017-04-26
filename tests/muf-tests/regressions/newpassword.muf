@@ -1,7 +1,5 @@
-: 0 #0 swap NEWPASSWORD force epsilon if
-me notify
-SWAP then
-;
+: x #1 "" NEWPASSWORD ;
 (
 BEFORE:@set test.muf=W
+EXPECT:Invalid password
 )

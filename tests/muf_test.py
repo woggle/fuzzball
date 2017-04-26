@@ -46,16 +46,18 @@ def generate():
                     code = fh.read()
                     expect_patterns = re.findall(rb'^EXPECT:(.*)', code, flags=re.MULTILINE)
                     before = re.findall(rb'^BEFORE:(.*)', code, flags=re.MULTILINE)
+                    after = re.findall(rb'^AFTER:(.*)', code, flags=re.MULTILINE)
                     if len(expect_patterns) == 0:
                         expect_patterns = [rb'\nTest passed.']
                     result['before'] = b'\n'.join(before)
+                    result['after'] = b'\n'.join(after)
                     result['patterns'] = expect_patterns
                     result['code'] = code
                 result['filename'] = os.path.join(root, file)
                 result['description'] = file
                 # hide fixture from test discovery
                 def _test(self):
-                    result = self._test_program(self.code, pass_check=False, before=self.before)
+                    result = self._test_program(self.code, pass_check=False, before=self.before, after=self.after)
                     for pattern in self.patterns:
                         self.assertTrue(re.search(pattern, result),
                             msg='expected output for %s: <%s> to match <%s>' % (self.filename, result, pattern))
