@@ -1519,6 +1519,7 @@ process_command(int descr, dbref player, const char *command)
     }
 
     /* calculate time command took. */
+    if (!fuzz_mode) {
     gettimeofday(&endtime, NULL);
     if (starttime.tv_usec > endtime.tv_usec) {
 	endtime.tv_usec += 1000000;
@@ -1536,6 +1537,7 @@ process_command(int descr, dbref player, const char *command)
 	log2file(tp_file_log_cmd_times, "%s: (%.3f) %s: %s",
 		 tbuf, totaltime, log_name, command);
         free(log_name);
+    }
     }
 }
 

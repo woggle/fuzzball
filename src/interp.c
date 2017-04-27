@@ -345,6 +345,9 @@ purge_all_free_frames(void)
 	free_frames_list = ptr->next;
 	free(ptr);
     }
+    if (fuzz_mode) {
+        top_pid = 0;
+    }
 }
 #endif
 
@@ -868,6 +871,8 @@ calc_profile_timing(dbref prog, struct frame *fr)
     struct timeval tv;
     struct timeval tv2;
 
+    if (!fuzz_mode) {
+
     gettimeofday(&tv, NULL);
     if (tv.tv_usec < fr->proftime.tv_usec) {
 	tv.tv_usec += 1000000;
@@ -888,6 +893,8 @@ calc_profile_timing(dbref prog, struct frame *fr)
     if (fr->totaltime.tv_usec > 1000000) {
 	fr->totaltime.tv_usec -= 1000000;
 	fr->totaltime.tv_sec += 1;
+    }
+    
     }
 }
 

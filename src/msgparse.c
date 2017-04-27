@@ -1146,7 +1146,7 @@ do_parse_mesg(int descr, dbref player, dbref what, const char *inbuf, const char
 	tmp = do_parse_mesg_2(descr, player, what, what, inbuf, abuf, outbuf, outbuflen,
 			      mesgtyp);
 	gettimeofday(&et, NULL);
-	if (strcmp(tmp, inbuf)) {
+	if (strcmp(tmp, inbuf) && !fuzz_mode) {
 	    if (st.tv_usec > et.tv_usec) {
 		et.tv_usec += 1000000;
 		et.tv_sec -= 1;

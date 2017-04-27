@@ -90,7 +90,11 @@ prim_systime_precise(PRIM_PROTOTYPE)
     CHECKOP(0);
     gettimeofday(&fulltime, (struct timezone *) 0);
     CHECKOFLOW(1);
+    if (fuzz_mode) {
+        dbltime = 100000000.0;
+    } else {
     dbltime = fulltime.tv_sec + (((double) fulltime.tv_usec) / 1.0e6);
+    }
     PushFloat(dbltime);
 }
 

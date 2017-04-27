@@ -162,6 +162,10 @@ purge_timenode_free_pool(void)
     }
     free_timenode_count = 0;
     free_timenode_list = NULL;
+    if (fuzz_mode) {
+        // FIXME: assert?
+        process_count = 0;
+    }
 }
 #endif
 
