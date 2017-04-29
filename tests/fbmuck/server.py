@@ -165,6 +165,7 @@ class Server(object):
 
         logging.debug('server command line is %s', command_line)
         my_env = os.environ.copy()
+        my_env['MALLOC_CHECK_'] = '2'
         if self.timezone:
             my_env['TZ'] = self.timezone
         self.process = \
@@ -402,7 +403,7 @@ class ServerTestBase(unittest.TestCase):
         self.assertEqual(self.server.exit_code(), 0)
         self.server.cleanup()
 
-    def _test_program(self, program, before=b"", after=b"", pass_check=True, timeout=10, debug=True):
+    def _test_program(self, program, before=b"", after=b"", pass_check=True, timeout=10, debug=True, autoquit=True):
         result = self._do_full_session(CONNECT_GOD +
 b"""
 @program test.muf
@@ -417,7 +418,7 @@ q
 """ + before + b"""
 runtest
 """ + after + b"""
-""", timeout=timeout)
+""", timeout=timeout, autoquit=autoquit)
         if pass_check:
             self.assertTrue(b'\nTest passed.' in result)
         return result
