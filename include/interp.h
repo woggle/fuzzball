@@ -320,6 +320,7 @@ extern int top_pid;
 extern int nargs;
 extern int prim_count;
 extern const char *base_inst[];
+int interp_depth;
 
 struct forvars *copy_fors(struct forvars *);
 struct tryvars *copy_trys(struct tryvars *);
