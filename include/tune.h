@@ -125,7 +125,6 @@ extern int tp_listen_mlev;
 extern int tp_lookup_cost;
 extern int tp_max_force_level;
 extern int tp_max_instr_count;
-extern int tp_max_interp_depth;
 extern int tp_max_loaded_objs;
 extern int tp_max_ml4_preempt_count;
 extern int tp_max_ml4_nested_interp_loop_count;

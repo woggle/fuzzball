@@ -6,7 +6,6 @@
 #include "fbstrings.h"
 #include "inst.h"
 #include "interp.h"
-#include "tune.h"
 
 static struct inst *oper1, *oper2, *oper3, *oper4;
 static struct inst temp1, temp2, temp3;
@@ -860,7 +859,7 @@ prim_interp(PRIM_PROTOTYPE)
 	abort_interp("Expected a string. (3)");
     if ((mlev < 3) && !permissions(ProgUID, oper2->data.objref))
 	abort_interp("Permission denied.");
-    if (fr->level > tp_max_interp_depth)
+    if (fr->level > 8)
 	abort_interp("Interp call loops not allowed.");
     CHECKREMOTE(oper2->data.objref);
 
