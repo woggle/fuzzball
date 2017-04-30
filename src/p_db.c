@@ -838,7 +838,7 @@ prim_playerp(PRIM_PROTOTYPE)
     oper1 = POP();
     if (oper1->type != PROG_OBJECT)
 	abort_interp("Invalid argument type.");
-    if (!valid_object(oper1) && !is_home(oper1)) {
+    if (!valid_object(oper1)) {
 	result = 0;
     } else {
 	ref = oper1->data.objref;
@@ -856,7 +856,7 @@ prim_thingp(PRIM_PROTOTYPE)
     oper1 = POP();
     if (oper1->type != PROG_OBJECT)
 	abort_interp("Invalid argument type.");
-    if (!valid_object(oper1) && !is_home(oper1)) {
+    if (!valid_object(oper1)) {
 	result = 0;
     } else {
 	ref = oper1->data.objref;
@@ -874,7 +874,7 @@ prim_roomp(PRIM_PROTOTYPE)
     oper1 = POP();
     if (oper1->type != PROG_OBJECT)
 	abort_interp("Invalid argument type.");
-    if (!valid_object(oper1) && !is_home(oper1)) {
+    if (!valid_object(oper1)) {
 	result = 0;
     } else {
 	ref = oper1->data.objref;
@@ -892,7 +892,7 @@ prim_programp(PRIM_PROTOTYPE)
     oper1 = POP();
     if (oper1->type != PROG_OBJECT)
 	abort_interp("Invalid argument type.");
-    if (!valid_object(oper1) && !is_home(oper1)) {
+    if (!valid_object(oper1)) {
 	result = 0;
     } else {
 	ref = oper1->data.objref;
@@ -910,7 +910,7 @@ prim_exitp(PRIM_PROTOTYPE)
     oper1 = POP();
     if (oper1->type != PROG_OBJECT)
 	abort_interp("Invalid argument type.");
-    if (!valid_object(oper1) && !is_home(oper1)) {
+    if (!valid_object(oper1)) {
 	result = 0;
     } else {
 	ref = oper1->data.objref;
