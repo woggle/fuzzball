@@ -4629,6 +4629,12 @@ main(int argc, char **argv)
         spawn_resolver();
 #endif
 
+        if (fuzz_mode) {
+            tp_max_ml4_preempt_count = 10000;
+            tp_max_ml4_nested_interp_loop_count = 5;
+            tp_max_nested_interp_loop_count = 5;
+        }
+
         if (fuzz_muf) {
             struct line *lines = 0;
             struct line *prev = 0;
