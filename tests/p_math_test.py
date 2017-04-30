@@ -154,6 +154,10 @@ class TestIntegerMath(MufProgramTestBase):
     -1 1 bitshift -2 = and
     -1 -1 bitshift -1 = and
     4 0 bitshift 4 = and
+    4 64 bitshift 0 = and
+    -8 64 bitshift 0 = and
+    4 -64 bitshift 0 = and
+    -8 -64 bitshift -1 = and
     if me @ "Test passed." notify then
 ;
 """)
